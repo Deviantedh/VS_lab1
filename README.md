@@ -154,6 +154,21 @@ src/main/java/portal/
    ```
    *(Либо запустите класс `portal.Lab1Application` в IntelliJ IDEA).*
 
+### 🛑 Как остановить Docker
+
+* **Остановить и удалить контейнеры (сохраняя данные БД в volume):**
+  ```bash
+  docker compose down
+  ```
+* **Приостановить контейнеры (без удаления):**
+  ```bash
+  docker compose stop
+  ```
+* **Остановить и полностью сбросить БД (удалить том с данными):**
+  ```bash
+  docker compose down -v
+  ```
+
 ---
 
 ## 📖 Интерактивная документация (Swagger UI)
