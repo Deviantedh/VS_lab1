@@ -73,7 +73,7 @@ portal
 * **Транзакционный сценарий 1 (`ShiftService.assignEmployee`):** атомарная проверка отсутствий, пересечений смен, назначение сотрудника и запись в аудит-лог `shift_employee_logs`.
 * **Транзакционный сценарий 2 (`RequestService.processRequest`):** при одобрении отпуска атомарно меняется статус заявки, создаётся запись в `employee_absences` и сотрудник автоматически снимается со всех плановых смен на даты отпуска.
 * **Контейнеризация:** multi-stage `Dockerfile` + `compose.yaml` (Postgres + App).
-* **Тестирование:** JUnit 5 + Mockito (`CompanyServiceTest`, `ShiftServiceTest`), Testcontainers для интеграционных тестов.
+* **Тестирование:** JUnit 5 + Mockito (`CompanyServiceTest`, `ShiftServiceTest`, `RequestServiceTest`), Testcontainers для интеграционных тестов (`7/7` тестов успешно проходят).
 
 ---
 
