@@ -26,7 +26,7 @@ public class AttendanceService {
     private final ShiftService shiftService;
 
     /**
-     * ЭНДПОИНТ БЕСКОНЕЧНОЙ ПРОКРУТКИ (Slice без подсчета общего количества).
+     * Прокрутка страниц данных (Slice без подсчета общего количества).
      */
     @Transactional(readOnly = true)
     public SliceResponse<AttendanceRecordDto.Response> getAllSliced(Pageable pageable) {

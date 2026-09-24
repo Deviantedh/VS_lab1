@@ -26,7 +26,7 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
 
     /**
-     * ТРЕБОВАНИЕ ТЗ №37:
+     * ТРЕБОВАНИЕ ТЗ:
      * Должен быть минимум один запрос, который вернет findAll в виде бесконечной прокрутки без указания общего количества записей.
      */
     @GetMapping
