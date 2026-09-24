@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import portal.Lab1ApplicationTests;
 import portal.dto.*;
 import portal.entity.*;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Import(portal.TestcontainersConfiguration.class)
 @ActiveProfiles("test")
+@Transactional
 class BusinessFlowIntegrationTest {
 
     @Autowired private CompanyService companyService;

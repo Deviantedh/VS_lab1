@@ -58,12 +58,7 @@ public class Employee {
     @Builder.Default
     private List<EmployeeAssignment> assignments = new ArrayList<>();
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "shift_employees",
-            joinColumns = @JoinColumn(name = "employee_id"),
-            inverseJoinColumns = @JoinColumn(name = "shift_id")
-    )
+    @ManyToMany(mappedBy = "employees", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Shift> shifts = new ArrayList<>();
 

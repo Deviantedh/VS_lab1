@@ -46,7 +46,12 @@ public class Shift {
     @Builder.Default
     private Integer breakMinutes = 0;
 
-    @ManyToMany(mappedBy = "shifts", fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "shift_employees",
+            joinColumns = @JoinColumn(name = "shift_id"),
+            inverseJoinColumns = @JoinColumn(name = "employee_id")
+    )
     @Builder.Default
     private List<Employee> employees = new ArrayList<>();
 
