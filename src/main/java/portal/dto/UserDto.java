@@ -24,10 +24,6 @@ public class UserDto {
         @NotBlank(message = "Логин обязателен")
         @Size(min = 3, max = 100, message = "Логин должен быть от 3 до 100 символов")
         private String login;
-
-        @NotBlank(message = "Пароль обязателен")
-        @Size(min = 6, message = "Пароль должен содержать не менее 6 символов")
-        private String password;
     }
 
     @Getter

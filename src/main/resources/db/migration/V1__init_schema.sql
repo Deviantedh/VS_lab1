@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS users (
     employee_id BIGINT UNIQUE REFERENCES employees(id) ON DELETE SET NULL,
     role_id SMALLINT NOT NULL REFERENCES roles(id),
     login VARCHAR(100) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,

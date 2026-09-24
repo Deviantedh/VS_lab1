@@ -58,7 +58,6 @@ public class UserService {
 
         User user = User.builder()
                 .login(login)
-                .passwordHash(request.getPassword()) // в лабе 3 будет BCrypt, пока заглушка
                 .role(role)
                 .employee(employee)
                 .isActive(true)

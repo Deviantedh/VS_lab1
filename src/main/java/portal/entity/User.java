@@ -37,8 +37,7 @@ public class User {
     @Size(min = 3, max = 100, message = "Логин должен быть от 3 до 100 символов")
     private String login;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
-    @NotBlank(message = "Пароль не может быть пустым")
+    @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
     @Column(name = "is_active", nullable = false)
