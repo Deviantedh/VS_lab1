@@ -307,7 +307,8 @@ async function loadMyRequests() {
   if (!state.currentEmployeeId) return;
 
   try {
-    const requests = await fetch(`${API_URL}/requests?employeeId=${state.currentEmployeeId}`).then(handleApiResponse);
+    const res = await fetch(`${API_URL}/requests/employee/${state.currentEmployeeId}`).then(handleApiResponse);
+    const requests = Array.isArray(res) ? res : (res.content || []);
     tbody.innerHTML = '';
 
     if (requests.length === 0) {

@@ -133,24 +133,30 @@ function initModals() {
 // ================= 1. СВОДКА (DASHBOARD) =================
 async function loadDashboardStats() {
   try {
-    const [companies, employees, requests] = await Promise.all([
+    const [companies, employees, requestsRes] = await Promise.all([
       fetch(`${API_URL}/companies`).then(handleApiResponse),
       fetch(`${API_URL}/employees`).then(handleApiResponse),
       fetch(`${API_URL}/requests?status=PENDING`).then(handleApiResponse)
     ]);
 
-    state.companies = companies;
-    state.employees = employees;
+    state.companies = Array.isArray(companies) ? companies : [];
+    state.employees = Array.isArray(employees) ? employees : [];
 
-    document.getElementById('stat-companies-count').textContent = companies.length;
-    document.getElementById('stat-employees-count').textContent = employees.length;
-    document.getElementById('stat-requests-count').textContent = requests.length;
+    const pendingCount = Array.isArray(requestsRes)
+      ? requestsRes.length
+      : (requestsRes.totalElements ?? (requestsRes.content ? requestsRes.content.length : 0));
+
+    document.getElementById('stat-companies-count').textContent = state.companies.length;
+    document.getElementById('stat-employees-count').textContent = state.employees.length;
+    document.getElementById('stat-requests-count').textContent = pendingCount;
 
     // Считаем филиалы суммарно
     let branchTotal = 0;
-    for (const c of companies) {
-      const branches = await fetch(`${API_URL}/branches/company/${c.id}`).then(handleApiResponse);
-      branchTotal += branches.length;
+    for (const c of state.companies) {
+      try {
+        const branches = await fetch(`${API_URL}/branches/company/${c.id}`).then(handleApiResponse);
+        branchTotal += Array.isArray(branches) ? branches.length : 0;
+      } catch (e) {}
     }
     document.getElementById('stat-branches-count').textContent = branchTotal;
   } catch (err) {
@@ -444,7 +450,8 @@ async function loadRequests() {
   if (filter) url += `?status=${filter}`;
 
   try {
-    const requests = await fetch(url).then(handleApiResponse);
+    const res = await fetch(url).then(handleApiResponse);
+    const requests = Array.isArray(res) ? res : (res.content || []);
     tbody.innerHTML = '';
 
     if (requests.length === 0) {
@@ -607,9 +614,22 @@ document.getElementById('form-position').addEventListener('submit', async (e) =>
 document.getElementById('form-employee').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('emp-name').value.trim();
-  const phone = document.getElementById('emp-phone').value.trim();
+  let phone = document.getElementById('emp-phone').value.trim();
+  
+  // Очистка от пробелов, скобок и дефисов: "+7 (999) 123-45-67" -> "+79991234567"
+  phone = phone.replace(/[\s\(\)\-]/g, '');
+  if (!phone.startsWith('+')) {
+    if (phone.startsWith('8')) {
+      phone = '+7' + phone.substring(1);
+    } else if (phone.startsWith('7')) {
+      phone = '+' + phone;
+    } else {
+      phone = '+7' + phone;
+    }
+  }
+
   const birthDate = document.getElementById('emp-birth').value || null;
-  const hireDate = document.getElementById('emp-hire').value;
+  const hireDate = document.getElementById('emp-hire').value || new Date().toISOString().substring(0, 10);
 
   try {
     await fetch(`${API_URL}/employees`, {
@@ -618,9 +638,10 @@ document.getElementById('form-employee').addEventListener('submit', async (e) =>
       body: JSON.stringify({ name, phone, birthDate, hireDate, status: 'ACTIVE' })
     }).then(handleApiResponse);
 
-    showToast('Сотрудник зарегистрирован!', 'success');
+    showToast(`Сотрудник "${name}" успешно зарегистрирован!`, 'success');
     document.getElementById('modal-employee').close();
     document.getElementById('form-employee').reset();
+    document.getElementById('emp-hire').value = new Date().toISOString().substring(0, 10);
     loadEmployees();
     loadDashboardStats();
   } catch (err) {
@@ -798,7 +819,7 @@ document.getElementById('form-process-request').addEventListener('submit', async
 
   try {
     await fetch(`${API_URL}/requests/${requestId}/process`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, resolutionComment })
     }).then(handleApiResponse);
