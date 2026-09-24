@@ -51,7 +51,7 @@ public class CompanyService {
 
     public Company findCompanyById(Long id) {
         return companyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Компания с ID " + id + " не найдена: кажется, сеть кофеен пока существует только в мечтах"));
+                .orElseThrow(() -> new ResourceNotFoundException("Компания с ID " + id + " не найдена: кажется, организация пока существует только в планах"));
     }
 
     private CompanyDto.Response toResponse(Company company) {

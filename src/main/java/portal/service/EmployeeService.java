@@ -112,7 +112,7 @@ public class EmployeeService {
 
     public Employee findEmployeeById(Long id) {
         return employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Сотрудник с ID " + id + " не найден: кажется, наш бариста ушёл за молоком и растворился во времени"));
+                .orElseThrow(() -> new ResourceNotFoundException("Сотрудник с ID " + id + " не найден: кажется, он пока не зарегистрирован в системе"));
     }
 
     public EmployeeDto.Response toResponse(Employee employee) {

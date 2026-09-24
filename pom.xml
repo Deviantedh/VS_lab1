@@ -11,8 +11,8 @@
     <groupId>devi</groupId>
     <artifactId>portal-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>lab1</name>
-    <description>lab1</description>
+    <name>REST API Системы управления сотрудниками</name>
+    <description>REST API Системы управления сотрудниками (Лабораторная работа №1)</description>
     <url/>
     <licenses>
         <license/>
