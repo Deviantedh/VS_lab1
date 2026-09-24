@@ -14,6 +14,6 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("REST API Системы управления сотрудниками")
                         .version("1.0.0")
-                        .description("REST API Системы управления сотрудниками и учета рабочего времени (Лабораторная работа №1)"));
+                        .description("REST API Системы управления сотрудниками (Лабораторная работа №1)"));
     }
 }
