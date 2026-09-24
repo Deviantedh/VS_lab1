@@ -1,7 +1,7 @@
 package portal.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -20,16 +20,21 @@ public class EmployeeDto {
     public static class Request {
         @NotBlank(message = "ФИО сотрудника обязательно")
         @Size(max = 255, message = "ФИО не может быть длиннее 255 символов")
+        @Schema(description = "ФИО сотрудника", example = "Иван Смирнов")
         private String name;
 
         @NotBlank(message = "Номер телефона обязателен")
-        @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Номер телефона желательно должен быть в формате +7XXXXXXXXXX")
+        @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Номер телефона должен быть в формате +7XXXXXXXXXX")
+        @Schema(description = "Номер телефона", example = "+79991234567")
         private String phone;
 
+        @Schema(description = "Дата рождения", example = "2000-05-15")
         private LocalDate birthDate;
 
+        @Schema(description = "Дата приёма на работу", example = "2026-09-01")
         private LocalDate hireDate;
 
+        @Schema(description = "Статус сотрудника", example = "ACTIVE")
         private EmployeeStatus status;
     }
 
@@ -39,12 +44,18 @@ public class EmployeeDto {
     @AllArgsConstructor
     @Builder
     public static class Response {
+        @Schema(example = "1")
         private Long id;
+        @Schema(example = "Иван Смирнов")
         private String name;
+        @Schema(example = "+79991234567")
         private String phone;
+        @Schema(example = "2000-05-15")
         private LocalDate birthDate;
+        @Schema(example = "2026-09-01")
         private LocalDate hireDate;
         private LocalDate dismissalDate;
+        @Schema(example = "ACTIVE")
         private EmployeeStatus status;
         private Instant createdAt;
         private Instant updatedAt;
