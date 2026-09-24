@@ -33,7 +33,7 @@ public class ShiftController {
     private final ShiftService shiftService;
 
     /**
-     * ТРЕБОВАНИЕ ТЗ №38:
+     * ТРЕБОВАНИЕ ТЗ:
      * Должен быть минимум один запрос, который вернет findAll с пагинацией и с указанием общего количества записей в http хедере.
      */
     @GetMapping
