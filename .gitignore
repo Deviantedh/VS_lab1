@@ -44,3 +44,8 @@ datalogical_schema*
 *.txt
 ~$*
 *.tmp
+start.sh
+stop.sh
+*.pid
+.frontend.pid
+.frontend.log
