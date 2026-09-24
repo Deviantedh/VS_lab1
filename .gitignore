@@ -37,9 +37,6 @@ build/
 ### Private Context & Architecture Drafts ###
 PROJECT_CONTEXT.md
 TOUR_GUIDE.md
-*.drawio
-*.drawio.*
-datalogical_schema*
 *пример*
 *.txt
 ~$*
