@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>СУС WFM • Личный кабинет сотрудника</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="toast-container"></div>
+
+  <!-- Шапка приложения -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-badge">👤</div>
+      <div>
+        <h1>СУС WFM • Кабинет Сотрудника</h1>
+      </div>
+    </div>
+
+    <div class="user-selector-container">
+      <label for="current-user-select">Сотрудник:</label>
+      <select id="current-user-select" class="form-select">
+        <option value="">Загрузка списка...</option>
+      </select>
+      <a href="http://localhost:3000" target="_blank" style="font-size: 13px; color: var(--primary); text-decoration: none; margin-left: 12px; font-weight: 500;">
+        🏢 Панель Admin ↗
+      </a>
+    </div>
+  </header>
+
+  <div class="main-wrapper">
+
+    <!-- Навигация по разделам -->
+    <nav class="employee-nav">
+      <button class="tab-btn active" data-tab="shifts">
+        <span>📅</span> Мои Смены
+      </button>
+      <button class="tab-btn" data-tab="attendance">
+        <span>⏱</span> Отметка явок (Check-in / out)
+      </button>
+      <button class="tab-btn" data-tab="requests">
+        <span>📝</span> Подать заявку (Отпуск/Больничный)
+      </button>
+      <button class="tab-btn" data-tab="absences">
+        <span>🏖</span> Мои Отсутствия
+      </button>
+      <button class="tab-btn" data-tab="profile">
+        <span>👤</span> Мой Профиль
+      </button>
+    </nav>
+
+    <!-- Содержимое табов -->
+
+    <!-- ТАБ 1: МОИ СМЕНЫ -->
+    <div id="tab-shifts" class="tab-content active">
+      <div class="card">
+        <h2 class="card-title">Моё расписание и смены</h2>
+        <p class="card-subtitle">Смены, на которые вы официально назначены управляющим</p>
+
+        <div id="my-shifts-container" class="shifts-grid">
+          <p style="color: var(--text-muted); text-align: center; grid-column: 1 / -1; padding: 24px;">
+            Загрузка ваших смен...
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ТАБ 2: ОТМЕТКА ЯВОК (CHECK-IN / OUT) -->
+    <div id="tab-attendance" class="tab-content">
+      <!-- Виджет часов и кнопки отметки -->
+      <div class="tracker-box">
+        <div class="tracker-time">
+          <h2 id="live-clock">--:--:--</h2>
+          <p id="live-date">Загрузка даты...</p>
+          <p style="margin-top: 6px; font-weight: 600;" id="attendance-status-text">
+            Статус: Готов к фиксации смены
+          </p>
+        </div>
+        <div class="tracker-actions">
+          <button class="btn-tracker btn-check-in" id="btn-clock-in">
+            <span>🟢</span> Начать смену (Check-in)
+          </button>
+          <button class="btn-tracker btn-check-out" id="btn-clock-out">
+            <span>🔴</span> Завершить смену (Check-out)
+          </button>
+        </div>
+      </div>
+
+      <!-- История явок -->
+      <div class="card">
+        <h2 class="card-title">История моих явок</h2>
+        <p class="card-subtitle">Сравнение плановых и фактически зафиксированных часов</p>
+        <div style="overflow-x: auto;">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>План: Начало</th>
+                <th>План: Конец</th>
+                <th>Факт: Приход</th>
+                <th>Факт: Уход</th>
+                <th>Перерыв</th>
+                <th>Комментарий</th>
+              </tr>
+            </thead>
+            <tbody id="my-attendance-table-body">
+              <tr><td colspan="7" style="text-align: center;">Загрузка истории...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ТАБ 3: ЗАЯВКИ -->
+    <div id="tab-requests" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">Подать новую заявку на отсутствие</h2>
+        <p class="card-subtitle">
+          При одобрении заявки руководителем система автоматически снимет вас со смен в выбранные даты
+        </p>
+
+        <form id="form-submit-request">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="req-type">Тип отсутствия *</label>
+              <select id="req-type" class="form-input" required>
+                <option value="VACATION">🏖 Ежегодный отпуск (VACATION)</option>
+                <option value="SICK_LEAVE">💊 Больничный лист (SICK_LEAVE)</option>
+                <option value="DAY_OFF">☕ Отгул / Выходной за свой счет (DAY_OFF)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="req-date-from">Дата начала *</label>
+              <input type="date" id="req-date-from" class="form-input" required>
+            </div>
+            <div class="form-field">
+              <label for="req-date-to">Дата окончания *</label>
+              <input type="date" id="req-date-to" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-bottom: 20px;">
+            <label for="req-comment">Причина / Комментарий руководителю</label>
+            <input type="text" id="req-comment" class="form-input" placeholder="Например: Плановый отпуск согласно графику">
+          </div>
+
+          <button type="submit" class="btn-submit">📨 Отправить заявку на согласование</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Мои поданные заявки и их статусы</h2>
+        <div style="overflow-x: auto;">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Тип</th>
+                <th>Период</th>
+                <th>Статус</th>
+                <th>Резолюция руководителя</th>
+                <th>Создана</th>
+              </tr>
+            </thead>
+            <tbody id="my-requests-table-body">
+              <tr><td colspan="6" style="text-align: center;">Загрузка заявок...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ТАБ 4: МОИ ОТСУТСТВИЯ -->
+    <div id="tab-absences" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">Утверждённые периоды отсутствия</h2>
+        <p class="card-subtitle">В эти даты вы освобождены от смен</p>
+        <div style="overflow-x: auto;">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Тип отсутствия</th>
+                <th>Дата с</th>
+                <th>Дата по</th>
+                <th>Причина</th>
+              </tr>
+            </thead>
+            <tbody id="my-absences-table-body">
+              <tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ТАБ 5: МОЙ ПРОФИЛЬ -->
+    <div id="tab-profile" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">Карточка сотрудника</h2>
+        <p class="card-subtitle">Персональные данные и назначения на ставки</p>
+
+        <div id="profile-details" style="font-size: 15px; line-height: 2;">
+          Загрузка профиля...
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
