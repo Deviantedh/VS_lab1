@@ -15,11 +15,12 @@ public class CompanyDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "CompanyRequest")
     public static class Request {
         @NotBlank(message = "Название компании не может быть пустым")
         @Size(max = 255, message = "Название компании не может превышать 255 символов")
         @JsonAlias({"title"})
-        @Schema(description = "Название компании", example = "Сеть городских заведений")
+        @Schema(description = "Название компании", example = "Ваш текст")
         private String name;
     }
 
@@ -28,11 +29,12 @@ public class CompanyDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "CompanyResponse")
     public static class Response {
         @Schema(description = "ID компании", example = "1")
         private Long id;
 
-        @Schema(description = "Название компании", example = "Сеть городских заведений")
+        @Schema(description = "Название компании", example = "Ваш текст")
         private String name;
 
         private Instant createdAt;

@@ -17,10 +17,11 @@ public class EmployeeDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "EmployeeRequest")
     public static class Request {
         @NotBlank(message = "ФИО сотрудника обязательно")
         @Size(max = 255, message = "ФИО не может быть длиннее 255 символов")
-        @Schema(description = "ФИО сотрудника", example = "Иван Смирнов")
+        @Schema(description = "ФИО сотрудника", example = "Ваш текст")
         private String name;
 
         @NotBlank(message = "Номер телефона обязателен")
@@ -28,10 +29,10 @@ public class EmployeeDto {
         @Schema(description = "Номер телефона", example = "+79991234567")
         private String phone;
 
-        @Schema(description = "Дата рождения", example = "2000-05-15")
+        @Schema(description = "Дата рождения", example = "2000-01-01")
         private LocalDate birthDate;
 
-        @Schema(description = "Дата приёма на работу", example = "2026-09-01")
+        @Schema(description = "Дата приёма на работу", example = "2026-01-01")
         private LocalDate hireDate;
 
         @Schema(description = "Статус сотрудника", example = "ACTIVE")
@@ -43,19 +44,21 @@ public class EmployeeDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "EmployeeResponse")
     public static class Response {
-        @Schema(example = "1")
+        @Schema(description = "ID сотрудника", example = "1")
         private Long id;
-        @Schema(example = "Иван Смирнов")
+        @Schema(description = "ФИО сотрудника", example = "Ваш текст")
         private String name;
-        @Schema(example = "+79991234567")
+        @Schema(description = "Номер телефона", example = "+79991234567")
         private String phone;
-        @Schema(example = "2000-05-15")
+        @Schema(description = "Дата рождения", example = "2000-01-01")
         private LocalDate birthDate;
-        @Schema(example = "2026-09-01")
+        @Schema(description = "Дата приёма на работу", example = "2026-01-01")
         private LocalDate hireDate;
+        @Schema(description = "Дата увольнения", example = "2026-12-31")
         private LocalDate dismissalDate;
-        @Schema(example = "ACTIVE")
+        @Schema(description = "Статус сотрудника", example = "ACTIVE")
         private EmployeeStatus status;
         private Instant createdAt;
         private Instant updatedAt;

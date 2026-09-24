@@ -16,6 +16,7 @@ public class BranchDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "BranchRequest")
     public static class Request {
         @NotNull(message = "ID компании обязателен")
         @Schema(description = "ID компании", example = "1")
@@ -24,16 +25,16 @@ public class BranchDto {
         @NotBlank(message = "Название филиала не может быть пустым")
         @Size(max = 255, message = "Название филиала не может превышать 255 символов")
         @JsonAlias({"title"})
-        @Schema(description = "Название филиала", example = "Филиал на Петроградской")
+        @Schema(description = "Название филиала", example = "Ваш текст")
         private String name;
 
         @NotBlank(message = "Адрес филиала обязателен")
         @Size(max = 500, message = "Адрес филиала не может превышать 500 символов")
-        @Schema(description = "Адрес филиала", example = "Каменноостровский пр., 12")
+        @Schema(description = "Адрес филиала", example = "Ваш текст")
         private String address;
 
         @Size(max = 50, message = "Телефон не может превышать 50 символов")
-        @Schema(description = "Телефон филиала", example = "+78121112233")
+        @Schema(description = "Телефон филиала", example = "+79991234567")
         private String phone;
 
         @Schema(description = "Активен ли филиал", example = "true")
@@ -45,18 +46,19 @@ public class BranchDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "BranchResponse")
     public static class Response {
         @Schema(example = "1")
         private Long id;
         @Schema(example = "1")
         private Long companyId;
-        @Schema(example = "Сеть городских заведений")
+        @Schema(example = "Ваш текст")
         private String companyName;
-        @Schema(example = "Филиал на Петроградской")
+        @Schema(example = "Ваш текст")
         private String name;
-        @Schema(example = "Каменноостровский пр., 12")
+        @Schema(example = "Ваш текст")
         private String address;
-        @Schema(example = "+78121112233")
+        @Schema(example = "+79991234567")
         private String phone;
         @Schema(example = "true")
         private Boolean isActive;

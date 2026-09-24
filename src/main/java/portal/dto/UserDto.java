@@ -16,6 +16,7 @@ public class UserDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "UserRequest")
     public static class Request {
         @Schema(description = "ID привязанного сотрудника (опционально)", example = "1")
         private Long employeeId;
@@ -26,7 +27,7 @@ public class UserDto {
 
         @NotBlank(message = "Логин обязателен")
         @Size(min = 3, max = 100, message = "Логин должен быть от 3 до 100 символов")
-        @Schema(description = "Логин пользователя", example = "ivan_smirnov")
+        @Schema(description = "Логин пользователя", example = "Ваш текст")
         private String login;
     }
 
@@ -35,22 +36,23 @@ public class UserDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "UserResponse")
     public static class Response {
-        @Schema(example = "1")
+        @Schema(description = "ID пользователя", example = "1")
         private Long id;
-        @Schema(example = "1")
+        @Schema(description = "ID сотрудника", example = "1")
         private Long employeeId;
-        @Schema(example = "Иван Смирнов")
+        @Schema(description = "ФИО сотрудника", example = "Ваш текст")
         private String employeeName;
-        @Schema(example = "3")
+        @Schema(description = "ID роли", example = "3")
         private Short roleId;
-        @Schema(example = "EMPLOYEE")
+        @Schema(description = "Код роли", example = "EMPLOYEE")
         private RoleCode roleCode;
-        @Schema(example = "Сотрудник")
+        @Schema(description = "Название роли", example = "Ваш текст")
         private String roleName;
-        @Schema(example = "ivan_smirnov")
+        @Schema(description = "Логин", example = "Ваш текст")
         private String login;
-        @Schema(example = "true")
+        @Schema(description = "Активен ли пользователь", example = "true")
         private Boolean isActive;
         private Instant lastLoginAt;
         private Instant createdAt;
