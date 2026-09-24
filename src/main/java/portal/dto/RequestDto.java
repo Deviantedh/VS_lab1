@@ -22,7 +22,7 @@ public class RequestDto {
         private Long employeeId;
 
         @NotNull(message = "Тип заявки обязателен")
-        @Schema(description = "Тип заявки (VACATION, SICK_LEAVE, ABSENCE, SCHEDULE_CHANGE)", example = "VACATION")
+        @Schema(description = "Тип заявки (VACATION, DAY_OFF, CERTIFICATE, MEDICAL_EXAM)", example = "VACATION")
         private RequestType type;
 
         @Schema(description = "Параметры заявки в формате JSON", example = "{\"dateFrom\": \"2026-10-01\", \"dateTo\": \"2026-10-14\"}")

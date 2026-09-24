@@ -25,7 +25,7 @@ public class EmployeeAbsenceDto {
         private Long requestId;
 
         @NotNull(message = "Тип отсутствия обязателен")
-        @Schema(description = "Тип отсутствия (VACATION, SICK_LEAVE, ABSENCE, OTHER)", example = "VACATION")
+        @Schema(description = "Тип отсутствия (VACATION, SICK_LEAVE, UNPAID_LEAVE)", example = "VACATION")
         private AbsenceType type;
 
         @NotNull(message = "Дата начала обязательна")
