@@ -139,8 +139,8 @@ async function loadDashboardStats() {
       fetch(`${API_URL}/requests?status=PENDING`).then(handleApiResponse)
     ]);
 
-    state.companies = Array.isArray(companies) ? companies : [];
-    state.employees = Array.isArray(employees) ? employees : [];
+    state.companies = Array.isArray(companies) ? companies : (companies.content || []);
+    state.employees = Array.isArray(employees) ? employees : (employees.content || []);
 
     const pendingCount = Array.isArray(requestsRes)
       ? requestsRes.length
@@ -282,7 +282,8 @@ async function loadBranchesForCompany(companyId) {
 async function loadEmployees() {
   const tbody = document.getElementById('employees-table-body');
   try {
-    const employees = await fetch(`${API_URL}/employees`).then(handleApiResponse);
+    const res = await fetch(`${API_URL}/employees?size=50`).then(handleApiResponse);
+    const employees = Array.isArray(res) ? res : (res.content || []);
     state.employees = employees;
 
     tbody.innerHTML = '';

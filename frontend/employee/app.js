@@ -87,7 +87,8 @@ function initTabs() {
 async function loadEmployeesList() {
   const select = document.getElementById('current-user-select');
   try {
-    const employees = await fetch(`${API_URL}/employees`).then(handleApiResponse);
+    const res = await fetch(`${API_URL}/employees?size=50`).then(handleApiResponse);
+    const employees = Array.isArray(res) ? res : (res.content || []);
     state.employees = employees;
 
     select.innerHTML = '';
