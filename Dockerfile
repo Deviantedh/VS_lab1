@@ -9,11 +9,11 @@ WORKDIR /build
 COPY pom.xml mvnw ./
 COPY .mvn .mvn
 
-RUN chmod +x ./mvnw && ./mvnw dependency:go-offline -B
+RUN chmod +x ./mvnw
 
-# Копируем исходный код и собираем JAR без прогона тестов в образе
+# Копируем исходный код и собираем JAR с сохранением кэша зависимостей Maven
 COPY src ./src
-RUN ./mvnw clean package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 ./mvnw clean package -DskipTests
 
 # ==========================================
 # 2. Этап запуска (Runtime Stage)

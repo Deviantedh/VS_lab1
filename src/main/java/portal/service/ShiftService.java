@@ -164,6 +164,9 @@ public class ShiftService {
     @Transactional
     public void delete(Long id) {
         Shift shift = findShiftById(id);
+        for (AttendanceRecord record : shift.getAttendanceRecords()) {
+            record.setShift(null);
+        }
         shiftRepository.delete(shift);
     }
 

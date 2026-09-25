@@ -85,6 +85,11 @@ public class AttendanceService {
     @Transactional
     public AttendanceRecordDto.Response checkIn(AttendanceRecordDto.CheckInRequest request) {
         Employee employee = employeeService.findEmployeeById(request.getEmployeeId());
+
+        if (attendanceRepository.existsByEmployeeIdAndActualStartIsNotNullAndActualEndIsNull(employee.getId())) {
+            throw new BusinessConflictException("У сотрудника " + employee.getName() + " уже есть активная открытая смена. Сначала завершите её (Check-Out).");
+        }
+
         Shift shift = null;
         Instant now = Instant.now();
         Instant plannedStart = now;

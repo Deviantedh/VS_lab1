@@ -64,6 +64,13 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.dismiss(id));
     }
 
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Удалить сотрудника из системы")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        employeeService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/assignments")
     @Operation(summary = "Назначить сотрудника в филиал на должность (связь Many-to-Many с доп. полями)")
     public ResponseEntity<EmployeeAssignmentDto.Response> assignToBranch(@Valid @RequestBody EmployeeAssignmentDto.Request request) {

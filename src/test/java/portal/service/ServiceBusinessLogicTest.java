@@ -40,9 +40,10 @@ class ServiceBusinessLogicTest {
     @Mock private AttendanceRecordRepository attendanceRepository;
     @Mock private UserRepository userRepository;
     @Mock private RoleRepository roleRepository;
-        @Mock private BranchService branchServiceCollaborator;
-        @Mock private PositionService positionServiceCollaborator;
-        @Mock private EmployeeService employeeServiceCollaborator;
+    @Mock private BranchService branchServiceCollaborator;
+    @Mock private PositionService positionServiceCollaborator;
+    @Mock private EmployeeService employeeServiceCollaborator;
+    @org.mockito.Spy private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     @InjectMocks private CompanyService companyServiceReal;
     @InjectMocks private BranchService branchService;

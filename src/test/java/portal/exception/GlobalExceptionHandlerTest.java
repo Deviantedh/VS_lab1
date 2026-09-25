@@ -65,6 +65,16 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void handleMethodNotSupported_shouldReturn405() {
+        ResponseEntity<ErrorResponse> response = handler.handleMethodNotSupported(
+                new org.springframework.web.HttpRequestMethodNotSupportedException("DELETE"), request);
+
+        assertEquals(405, response.getStatusCode().value());
+        assertEquals("Method Not Allowed", response.getBody().getError());
+        assertTrue(response.getBody().getMessage().contains("DELETE"));
+    }
+
+    @Test
     void handleGeneral_shouldReturn500WithoutOriginalMessage() {
         ResponseEntity<ErrorResponse> response = handler.handleGeneral(
                 new RuntimeException("internal details"), request);

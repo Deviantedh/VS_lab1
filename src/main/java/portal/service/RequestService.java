@@ -23,7 +23,6 @@ import java.util.List;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RequestService {
 
     private final RequestRepository requestRepository;
@@ -32,6 +31,20 @@ public class RequestService {
     private final ShiftEmployeeLogRepository shiftLogRepository;
     private final EmployeeService employeeService;
     private final ObjectMapper objectMapper;
+
+    public RequestService(RequestRepository requestRepository,
+                          EmployeeAbsenceRepository absenceRepository,
+                          ShiftRepository shiftRepository,
+                          ShiftEmployeeLogRepository shiftLogRepository,
+                          EmployeeService employeeService,
+                          ObjectMapper objectMapper) {
+        this.requestRepository = requestRepository;
+        this.absenceRepository = absenceRepository;
+        this.shiftRepository = shiftRepository;
+        this.shiftLogRepository = shiftLogRepository;
+        this.employeeService = employeeService;
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
+    }
 
     @Transactional(readOnly = true)
     public Page<RequestDto.Response> getAllPaged(RequestStatus status, Pageable pageable) {
@@ -84,6 +97,10 @@ public class RequestService {
             throw new BusinessConflictException("Заявка с ID " + id + " уже была обработана ранее (" + request.getStatus() + ")");
         }
 
+        if (processDto.getStatus() != RequestStatus.APPROVED && processDto.getStatus() != RequestStatus.REJECTED) {
+            throw new BusinessConflictException("Решение по заявке должно быть либо APPROVED, либо REJECTED");
+        }
+
         Employee processedBy = null;
         if (processDto.getProcessedById() != null) {
             processedBy = employeeService.findEmployeeById(processDto.getProcessedById());
@@ -104,26 +121,28 @@ public class RequestService {
     }
 
     private void handleApprovedAbsence(Request request, Employee processedBy) {
-        LocalDate dateFrom = LocalDate.now();
-        LocalDate dateTo = LocalDate.now();
+        if (request.getRequestData() == null || request.getRequestData().isBlank()) {
+            throw new BusinessConflictException("В заявке на отсутствие отсутствуют параметры (requestData)");
+        }
 
-        // Парсим даты из JSONB requestData
-        if (request.getRequestData() != null && !request.getRequestData().isBlank()) {
-            try {
-                JsonNode root = objectMapper.readTree(request.getRequestData());
-                if (root.has("dateFrom")) {
-                    dateFrom = LocalDate.parse(root.get("dateFrom").asText());
-                }
-                if (root.has("dateTo")) {
-                    dateTo = LocalDate.parse(root.get("dateTo").asText());
-                }
-            } catch (Exception e) {
-                log.warn("Не удалось распарсить даты из requestData: {}", request.getRequestData());
+        LocalDate dateFrom;
+        LocalDate dateTo;
+
+        try {
+            JsonNode root = objectMapper.readTree(request.getRequestData());
+            if (!root.has("dateFrom") || !root.has("dateTo")) {
+                throw new BusinessConflictException("В параметрах заявки отсутствуют обязательные поля dateFrom или dateTo");
             }
+            dateFrom = LocalDate.parse(root.get("dateFrom").asText());
+            dateTo = LocalDate.parse(root.get("dateTo").asText());
+        } catch (BusinessConflictException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessConflictException("Некорректный формат дат или JSON в параметрах заявки: " + e.getMessage());
         }
 
         if (dateFrom.isAfter(dateTo)) {
-            dateTo = dateFrom;
+            throw new BusinessConflictException("Дата начала отсутствия (" + dateFrom + ") не может быть позже даты окончания (" + dateTo + ")");
         }
 
         // 1. Создаем запись в календаре отсутствий

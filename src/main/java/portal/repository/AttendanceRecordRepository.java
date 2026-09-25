@@ -10,4 +10,5 @@ import portal.entity.AttendanceRecord;
 public interface AttendanceRecordRepository extends JpaRepository<AttendanceRecord, Long> {
     Slice<AttendanceRecord> findAllBy(Pageable pageable);
     Slice<AttendanceRecord> findAllByEmployeeId(Long employeeId, Pageable pageable);
+    boolean existsByEmployeeIdAndActualStartIsNotNullAndActualEndIsNull(Long employeeId);
 }

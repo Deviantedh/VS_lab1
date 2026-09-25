@@ -72,6 +72,21 @@ public class ShiftController {
         return ResponseEntity.ok(shiftService.getById(id));
     }
 
+    @GetMapping("/schedule/{scheduleId}")
+    @Operation(summary = "Получить смены конкретного графика")
+    public ResponseEntity<List<ShiftDto.Response>> getBySchedule(
+            @PathVariable Long scheduleId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "50") @Min(1) @Max(50) int size
+    ) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "date", "timeFrom"));
+        Page<ShiftDto.Response> pageResult = shiftService.getBySchedule(scheduleId, pageRequest);
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(pageResult.getTotalElements()))
+                .header("X-Total-Pages", String.valueOf(pageResult.getTotalPages()))
+                .body(pageResult.getContent());
+    }
+
     @PostMapping
     @Operation(summary = "Создать смену в расписании")
     public ResponseEntity<ShiftDto.Response> create(@Valid @RequestBody ShiftDto.Request request) {

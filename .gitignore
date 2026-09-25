@@ -35,10 +35,9 @@ build/
 .vscode/
 
 ### Private Context & Architecture Drafts ###
-PROJECT_CONTEXT.md
-TOUR_GUIDE.md
 *пример*
 *.txt
+!КОМАНДЫ.txt
 ~$*
 *.tmp
 start.sh

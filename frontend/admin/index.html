@@ -14,7 +14,7 @@
   <!-- Боковая панель навигации -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-icon">🏢</div>
+      <div class="brand-icon">WFM</div>
       <div>
         <h1>СУС WFM</h1>
         <span>Панель Администратора</span>
@@ -23,31 +23,31 @@
 
     <nav class="nav-menu">
       <button class="nav-item active" data-section="dashboard">
-        <span>📊</span> Сводка
+        Сводка
       </button>
       <button class="nav-item" data-section="organization">
-        <span>🏛</span> Организация
+        Организация
       </button>
       <button class="nav-item" data-section="employees">
-        <span>👥</span> Сотрудники
+        Сотрудники
       </button>
       <button class="nav-item" data-section="shifts">
-        <span>📅</span> Смены и Графики
+        Смены и Графики
       </button>
       <button class="nav-item" data-section="requests">
-        <span>📨</span> Заявки (Отпуска)
+        Заявки (Отпуска)
       </button>
       <button class="nav-item" data-section="attendance">
-        <span>⏱</span> Табель явок
+        Табель явок
       </button>
     </nav>
 
     <div class="sidebar-footer">
       <a href="http://localhost:3001" target="_blank" class="sidebar-link">
-        <span>👤</span> Открыть кабинет сотрудника
+        Открыть кабинет сотрудника
       </a>
       <a href="http://localhost:8080/swagger-ui.html" target="_blank" class="sidebar-link">
-        <span>📖</span> Документация Swagger API
+        Документация Swagger API
       </a>
     </div>
   </aside>
@@ -91,19 +91,19 @@
 
         <div class="panel">
           <div class="panel-header">
-            <h3>⚡ Быстрые действия</h3>
+            <h3>Быстрые действия</h3>
           </div>
           <div class="panel-body" style="display: flex; gap: 12px; flex-wrap: wrap;">
             <button class="btn btn-primary" id="btn-quick-add-company">+ Новая компания</button>
             <button class="btn btn-primary" id="btn-quick-add-branch">+ Новый филиал</button>
             <button class="btn btn-primary" id="btn-quick-add-employee">+ Новый сотрудник</button>
-            <button class="btn btn-secondary" id="btn-refresh-all">🔄 Обновить данные</button>
+            <button class="btn btn-secondary" id="btn-refresh-all">Обновить данные</button>
           </div>
         </div>
 
         <div class="panel">
           <div class="panel-header">
-            <h3>📌 Справка по архитектуре и портам</h3>
+            <h3>Справка по архитектуре и портам</h3>
           </div>
           <div class="panel-body" style="font-size: 14px; color: var(--text-muted); line-height: 1.6;">
             <p><strong>Бэкенд REST API:</strong> <code>http://localhost:8080/api</code> (Spring Boot + PostgreSQL 16 + Flyway).</p>
@@ -198,7 +198,7 @@
           <div class="panel-header">
             <h3>Список сотрудников</h3>
             <div style="display: flex; gap: 10px;">
-              <button class="btn btn-secondary btn-sm" id="btn-assign-employee-branch">🔗 Назначить в филиал</button>
+              <button class="btn btn-secondary btn-sm" id="btn-assign-employee-branch">Назначить в филиал</button>
               <button class="btn btn-primary btn-sm" id="btn-add-employee">+ Добавить сотрудника</button>
             </div>
           </div>
@@ -550,7 +550,7 @@
   <!-- Модалка: Аудит-лог смены -->
   <dialog id="modal-shift-logs" style="max-width: 640px;">
     <div class="modal-header">
-      <h4>📜 Журнал изменений состава смены (Аудит-лог)</h4>
+      <h4>Журнал изменений состава смены (Аудит-лог)</h4>
       <button class="btn btn-secondary btn-sm btn-close-modal">✕</button>
     </div>
     <div class="modal-body table-responsive">
@@ -586,8 +586,8 @@
         <div class="form-group">
           <label for="process-decision">Решение *</label>
           <select id="process-decision" class="form-control" required>
-            <option value="APPROVED">✅ Одобрить (сотрудник будет автоматически снят с конфликтующих смен)</option>
-            <option value="REJECTED">❌ Отклонить</option>
+            <option value="APPROVED">Одобрить (сотрудник будет автоматически снят с конфликтующих смен)</option>
+            <option value="REJECTED">Отклонить</option>
           </select>
         </div>
         <div class="form-group">

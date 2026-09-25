@@ -24,6 +24,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -63,6 +64,26 @@ class ShiftControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Total-Count", "42"))
                 .andExpect(header().string("X-Total-Pages", "3"))
+                .andExpect(jsonPath("$[0].id").value(1));
+    }
+
+    @Test
+    @DisplayName("GET /api/shifts/schedule/{scheduleId} returns shifts for schedule")
+    void getBySchedule_shouldReturnList() throws Exception {
+        ShiftDto.Response response = ShiftDto.Response.builder()
+                .id(1L)
+                .scheduleId(2L)
+                .date(LocalDate.of(2026, 10, 20))
+                .timeFrom(LocalTime.of(9, 0))
+                .timeTo(LocalTime.of(18, 0))
+                .breakMinutes(30)
+                .assignedEmployees(List.of())
+                .build();
+        when(shiftService.getBySchedule(eq(2L), any())).thenReturn(new PageImpl<>(List.of(response), PageRequest.of(0, 50), 1));
+
+        mockMvc.perform(get("/api/shifts/schedule/2"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Total-Count", "1"))
                 .andExpect(jsonPath("$[0].id").value(1));
     }
 

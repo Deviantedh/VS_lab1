@@ -149,7 +149,7 @@ async function loadMyShifts() {
       for (const b of branches) {
         const schedules = await fetch(`${API_URL}/schedules/branch/${b.id}`).then(handleApiResponse);
         for (const s of schedules) {
-          const shifts = await fetch(`${API_URL}/shifts/schedule/${s.id}?page=0&size=100`).then(handleApiResponse);
+          const shifts = await fetch(`${API_URL}/shifts/schedule/${s.id}?page=0&size=50`).then(handleApiResponse);
           for (const shift of shifts) {
             if (shift.assignedEmployees && shift.assignedEmployees.some(e => e.id === state.currentEmployeeId)) {
               myShifts.push({ ...shift, branchName: b.name });
@@ -167,7 +167,7 @@ async function loadMyShifts() {
       container.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 30px; background: #fff; border-radius: var(--radius); border: 1px solid var(--border);">
           <p style="font-size: 16px; font-weight: 600; color: var(--text-muted);">
-            У вас пока нет назначенных смен 🗓
+            У вас пока нет назначенных смен
           </p>
           <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
             Попросите менеджера в панели управления назначить вас в график.
@@ -181,9 +181,9 @@ async function loadMyShifts() {
       const tile = document.createElement('div');
       tile.className = 'shift-tile';
       tile.innerHTML = `
-        <div class="shift-tile-date">📅 ${shift.date}</div>
-        <div class="shift-tile-time">⏰ ${shift.timeFrom.substring(0, 5)} — ${shift.timeTo.substring(0, 5)}</div>
-        <div class="shift-tile-meta">🏢 Филиал: <strong>${escapeHtml(shift.branchName)}</strong></div>
+        <div class="shift-tile-date">${shift.date}</div>
+        <div class="shift-tile-time">${shift.timeFrom.substring(0, 5)} — ${shift.timeTo.substring(0, 5)}</div>
+        <div class="shift-tile-meta">Филиал: <strong>${escapeHtml(shift.branchName)}</strong></div>
         <div class="shift-tile-meta">Обед: ${shift.breakMinutes} минут • Смена #${shift.id}</div>
       `;
       container.appendChild(tile);
@@ -200,7 +200,8 @@ async function loadMyAttendance() {
   if (!state.currentEmployeeId) return;
 
   try {
-    const records = await fetch(`${API_URL}/attendance/employee/${state.currentEmployeeId}`).then(handleApiResponse);
+    const res = await fetch(`${API_URL}/attendance/employee/${state.currentEmployeeId}`).then(handleApiResponse);
+    const records = Array.isArray(res) ? res : (res.content || []);
     tbody.innerHTML = '';
 
     // Проверяем, есть ли незакрытая смена
@@ -208,13 +209,13 @@ async function loadMyAttendance() {
     state.activeAttendanceRecord = openRecord;
 
     if (openRecord) {
-      statusText.innerHTML = `🟢 Вы находитесь на смене с ${formatTime(openRecord.actualStart)}`;
+      statusText.innerHTML = `Вы находитесь на смене с ${formatTime(openRecord.actualStart)}`;
       document.getElementById('btn-clock-in').disabled = true;
       document.getElementById('btn-clock-in').style.opacity = '0.5';
       document.getElementById('btn-clock-out').disabled = false;
       document.getElementById('btn-clock-out').style.opacity = '1';
     } else {
-      statusText.innerHTML = '⚪ Вы не на смене (готов к Check-in)';
+      statusText.innerHTML = 'Вы не на смене (готов к Check-in)';
       document.getElementById('btn-clock-in').disabled = false;
       document.getElementById('btn-clock-in').style.opacity = '1';
       document.getElementById('btn-clock-out').disabled = true;
@@ -248,27 +249,17 @@ async function loadMyAttendance() {
 document.getElementById('btn-clock-in').addEventListener('click', async () => {
   if (!state.currentEmployeeId) return;
 
-  const now = new Date();
-  const plannedStart = new Date(now);
-  plannedStart.setHours(9, 0, 0, 0);
-  const plannedEnd = new Date(now);
-  plannedEnd.setHours(18, 0, 0, 0);
-
   try {
-    await fetch(`${API_URL}/attendance`, {
+    await fetch(`${API_URL}/attendance/check-in`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         employeeId: state.currentEmployeeId,
-        plannedStart: plannedStart.toISOString(),
-        plannedEnd: plannedEnd.toISOString(),
-        actualStart: now.toISOString(),
-        breakMinutes: 30,
         comment: 'Приход на работу через Личный кабинет'
       })
     }).then(handleApiResponse);
 
-    showToast('Смена успешно начата! Фактическое время прихода зафиксировано.', 'success');
+    showToast('Смена успешно начата! Check-in зафиксирован.', 'success');
     loadMyAttendance();
   } catch (err) {
     showToast(err.message, 'danger');
@@ -283,15 +274,14 @@ document.getElementById('btn-clock-out').addEventListener('click', async () => {
   }
 
   const comment = prompt('Комментарий к смене (необязательно):', 'Смена завершена без происшествий');
-  const now = new Date();
 
   try {
-    await fetch(`${API_URL}/attendance/${state.activeAttendanceRecord.id}`, {
-      method: 'PATCH',
+    await fetch(`${API_URL}/attendance/${state.activeAttendanceRecord.id}/check-out`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        actualEnd: now.toISOString(),
-        comment: comment || state.activeAttendanceRecord.comment
+        breakMinutes: 30,
+        comment: comment || 'Смена завершена'
       })
     }).then(handleApiResponse);
 
@@ -407,7 +397,7 @@ async function loadMyAbsences() {
         <td><span class="badge badge-blue">${a.type}</span></td>
         <td><strong>${a.dateFrom}</strong></td>
         <td><strong>${a.dateTo}</strong></td>
-        <td>${escapeHtml(a.reason || 'Согласовано')}</td>
+        <td>${escapeHtml(a.comment || 'Согласовано')}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -417,7 +407,7 @@ async function loadMyAbsences() {
 }
 
 // ================= 5. МОЙ ПРОФИЛЬ =================
-function renderProfile() {
+async function renderProfile() {
   const el = document.getElementById('profile-details');
   const emp = state.currentEmployee;
   if (!emp) {
@@ -425,22 +415,27 @@ function renderProfile() {
     return;
   }
 
-  const assignmentsHtml = (emp.assignments && emp.assignments.length > 0)
-    ? emp.assignments.map(a => `
+  let assignments = [];
+  try {
+    assignments = await fetch(`${API_URL}/employees/${emp.id}/assignments`).then(handleApiResponse);
+  } catch (e) {}
+
+  const assignmentsHtml = (assignments && assignments.length > 0)
+    ? assignments.map(a => `
         <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); margin-top: 8px;">
-          🏢 Филиал: <strong>${escapeHtml(a.branchName)}</strong><br>
-          💼 Должность: <strong>${escapeHtml(a.positionTitle)}</strong><br>
-          📅 Работает с: ${a.startedAt} (${a.isPrimary ? 'Основная ставка' : 'Совместительство'})
+          Филиал: <strong>${escapeHtml(a.branchName)}</strong><br>
+          Должность: <strong>${escapeHtml(a.positionTitle)}</strong><br>
+          Работает с: ${a.startedAt} (${a.isPrimary ? 'Основная ставка' : 'Совместительство'})
         </div>
       `).join('')
     : '<div style="color: var(--text-muted); margin-top: 4px;">Нет активных назначений на филиалы</div>';
 
   el.innerHTML = `
-    <p>👤 <strong>ФИО:</strong> ${escapeHtml(emp.name)}</p>
-    <p>📞 <strong>Телефон:</strong> ${escapeHtml(emp.phone)}</p>
-    <p>🎂 <strong>Дата рождения:</strong> ${emp.birthDate || 'Не указана'}</p>
-    <p>📅 <strong>Дата приема на работу:</strong> ${emp.hireDate || '—'}</p>
-    <p>🏷 <strong>Текущий статус:</strong> <span class="badge badge-green">${emp.status}</span></p>
+    <p><strong>ФИО:</strong> ${escapeHtml(emp.name)}</p>
+    <p><strong>Телефон:</strong> ${escapeHtml(emp.phone)}</p>
+    <p><strong>Дата рождения:</strong> ${emp.birthDate || 'Не указана'}</p>
+    <p><strong>Дата приема на работу:</strong> ${emp.hireDate || '—'}</p>
+    <p><strong>Текущий статус:</strong> <span class="badge badge-green">${emp.status}</span></p>
     <div style="margin-top: 14px;">
       <strong>Мои ставки и должности:</strong>
       ${assignmentsHtml}
@@ -455,7 +450,15 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function formatDateTime(isoString) {
@@ -491,8 +494,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const nextWeek = new Date();
   nextWeek.setDate(nextWeek.getDate() + 7);
-  document.getElementById('req-date-from').value = tomorrow.toISOString().substring(0, 10);
-  document.getElementById('req-date-to').value = nextWeek.toISOString().substring(0, 10);
+  document.getElementById('req-date-from').value = formatLocalDate(tomorrow);
+  document.getElementById('req-date-to').value = formatLocalDate(nextWeek);
 
   // Селектор сотрудника
   document.getElementById('current-user-select').addEventListener('change', (e) => {

@@ -52,6 +52,13 @@ class EmployeeControllerTest {
     }
 
     @Test
+    void delete_shouldReturn204() throws Exception {
+        doNothing().when(employeeService).delete(4L);
+        mockMvc.perform(delete("/api/employees/4")).andExpect(status().isNoContent());
+        verify(employeeService).delete(4L);
+    }
+
+    @Test
     void create_shouldReturn400ForInvalidPhone() throws Exception {
         mockMvc.perform(post("/api/employees").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Worker\",\"phone\":\"bad\"}"))

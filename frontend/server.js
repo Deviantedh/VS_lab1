@@ -81,15 +81,15 @@ const adminOnly = args.includes('--admin-only');
 const employeeOnly = args.includes('--employee-only');
 
 console.log('='.repeat(55));
-console.log('🚀 Запуск клиентских интерфейсов СУС (WFM Portal)');
+console.log('Запуск клиентских интерфейсов СУС (WFM Portal)');
 console.log('='.repeat(55));
 
 if (!employeeOnly) {
-  createStaticServer(adminDir, 3000, '👑 Панель Управления (Admin/HR)');
+  createStaticServer(adminDir, 3000, 'Панель Управления (Admin/HR)');
 }
 
 if (!adminOnly) {
-  createStaticServer(employeeDir, 3001, '👤 Кабинет Сотрудника (Employee)');
+  createStaticServer(employeeDir, 3001, 'Кабинет Сотрудника (Employee)');
 }
 
 console.log('API бэкенда ожидается на: http://localhost:8080');

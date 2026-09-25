@@ -13,7 +13,7 @@
   <!-- Шапка приложения -->
   <header class="app-header">
     <div class="brand-section">
-      <div class="brand-badge">👤</div>
+      <div class="brand-badge">WFM</div>
       <div>
         <h1>СУС WFM • Кабинет Сотрудника</h1>
       </div>
@@ -25,7 +25,7 @@
         <option value="">Загрузка списка...</option>
       </select>
       <a href="http://localhost:3000" target="_blank" style="font-size: 13px; color: var(--primary); text-decoration: none; margin-left: 12px; font-weight: 500;">
-        🏢 Панель Admin ↗
+        Панель Admin
       </a>
     </div>
   </header>
@@ -35,19 +35,19 @@
     <!-- Навигация по разделам -->
     <nav class="employee-nav">
       <button class="tab-btn active" data-tab="shifts">
-        <span>📅</span> Мои Смены
+        Мои Смены
       </button>
       <button class="tab-btn" data-tab="attendance">
-        <span>⏱</span> Отметка явок (Check-in / out)
+        Отметка явок (Check-in / out)
       </button>
       <button class="tab-btn" data-tab="requests">
-        <span>📝</span> Подать заявку (Отпуск/Больничный)
+        Подать заявку (Отпуск / Больничный)
       </button>
       <button class="tab-btn" data-tab="absences">
-        <span>🏖</span> Мои Отсутствия
+        Мои Отсутствия
       </button>
       <button class="tab-btn" data-tab="profile">
-        <span>👤</span> Мой Профиль
+        Мой Профиль
       </button>
     </nav>
 
@@ -80,10 +80,10 @@
         </div>
         <div class="tracker-actions">
           <button class="btn-tracker btn-check-in" id="btn-clock-in">
-            <span>🟢</span> Начать смену (Check-in)
+            Начать смену (Check-in)
           </button>
           <button class="btn-tracker btn-check-out" id="btn-clock-out">
-            <span>🔴</span> Завершить смену (Check-out)
+            Завершить смену (Check-out)
           </button>
         </div>
       </div>
@@ -126,9 +126,9 @@
             <div class="form-field">
               <label for="req-type">Тип отсутствия *</label>
               <select id="req-type" class="form-input" required>
-                <option value="VACATION">🏖 Ежегодный отпуск (VACATION)</option>
-                <option value="SICK_LEAVE">💊 Больничный лист (SICK_LEAVE)</option>
-                <option value="DAY_OFF">☕ Отгул / Выходной за свой счет (DAY_OFF)</option>
+                <option value="VACATION">Ежегодный отпуск (VACATION)</option>
+                <option value="SICK_LEAVE">Больничный лист (SICK_LEAVE)</option>
+                <option value="DAY_OFF">Отгул / Выходной за свой счет (DAY_OFF)</option>
               </select>
             </div>
             <div class="form-field">
@@ -146,7 +146,7 @@
             <input type="text" id="req-comment" class="form-input" placeholder="Например: Плановый отпуск согласно графику">
           </div>
 
-          <button type="submit" class="btn-submit">📨 Отправить заявку на согласование</button>
+          <button type="submit" class="btn-submit">Отправить заявку на согласование</button>
         </form>
       </div>
 

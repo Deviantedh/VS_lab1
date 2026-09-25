@@ -292,12 +292,24 @@ async function loadEmployees() {
       return;
     }
 
+    // Загружаем назначения параллельно
+    const assignmentsMap = {};
+    await Promise.all(employees.map(async emp => {
+      try {
+        const assigns = await fetch(`${API_URL}/employees/${emp.id}/assignments`).then(handleApiResponse);
+        assignmentsMap[emp.id] = assigns || [];
+      } catch (e) {
+        assignmentsMap[emp.id] = [];
+      }
+    }));
+
     employees.forEach(emp => {
       const tr = document.createElement('tr');
-      const assignmentsHtml = (emp.assignments && emp.assignments.length > 0)
-        ? emp.assignments.map(a => `
+      const empAssignments = assignmentsMap[emp.id] || [];
+      const assignmentsHtml = (empAssignments.length > 0)
+        ? empAssignments.map(a => `
             <div style="font-size: 12px; margin-bottom: 4px;">
-              🏢 <strong>${escapeHtml(a.branchName)}</strong> — ${escapeHtml(a.positionTitle)}
+              <strong>${escapeHtml(a.branchName)}</strong> — ${escapeHtml(a.positionTitle)}
               ${a.isPrimary ? '<span class="badge badge-blue">Основная</span>' : '<span class="badge badge-gray">Совмещение</span>'}
             </div>
           `).join('')
@@ -315,7 +327,10 @@ async function loadEmployees() {
         <td><span class="badge ${statusBadge}">${emp.status}</span></td>
         <td>${assignmentsHtml}</td>
         <td>
-          <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${emp.id})">Удалить</button>
+          <div style="display: flex; gap: 6px;">
+            ${emp.status !== 'DISMISSED' ? `<button class="btn btn-secondary btn-sm" onclick="dismissEmployee(${emp.id})">Уволить</button>` : ''}
+            <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${emp.id})">Удалить</button>
+          </div>
         </td>
       `;
       tbody.appendChild(tr);
@@ -417,21 +432,21 @@ async function loadShiftsForSchedule(scheduleId) {
       const employeesList = (shift.assignedEmployees && shift.assignedEmployees.length > 0)
         ? shift.assignedEmployees.map(e => `
             <span class="badge badge-green" style="display: inline-flex; align-items: center; gap: 4px;">
-              👤 ${escapeHtml(e.name)}
+              ${escapeHtml(e.name)}
               <button style="border: none; background: none; color: #b91c1c; cursor: pointer; font-weight: bold; margin-left: 2px;"
-                      onclick="removeEmployeeFromShift(${shift.id}, ${e.id}, '${escapeHtml(e.name)}')">✕</button>
+                      onclick="removeEmployeeFromShift(${shift.id}, ${e.id})">✕</button>
             </span>
           `).join('')
         : '<span style="color: var(--text-muted); font-size: 13px;">Никто не назначен</span>';
 
       card.innerHTML = `
         <div class="shift-info">
-          <div class="shift-time">📅 ${shift.date} • ⏰ ${shift.timeFrom.substring(0, 5)} — ${shift.timeTo.substring(0, 5)}</div>
+          <div class="shift-time">${shift.date} • ${shift.timeFrom.substring(0, 5)} — ${shift.timeTo.substring(0, 5)}</div>
           <div class="shift-meta">Перерыв: ${shift.breakMinutes} мин. | Смена #${shift.id}</div>
           <div class="shift-employees-list">${employeesList}</div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
-          <button class="btn btn-secondary btn-sm" onclick="openShiftLogsModal(${shift.id})">📜 Аудит</button>
+          <button class="btn btn-secondary btn-sm" onclick="openShiftLogsModal(${shift.id})">Аудит</button>
           <button class="btn btn-primary btn-sm" onclick="openAssignShiftModal(${shift.id}, '${shift.date}', '${shift.timeFrom.substring(0, 5)}-${shift.timeTo.substring(0, 5)}')">+ Сотрудник</button>
           <button class="btn btn-danger btn-sm" onclick="deleteShift(${shift.id})">Удалить</button>
         </div>
@@ -660,7 +675,7 @@ document.getElementById('form-assign-employee').addEventListener('submit', async
   const isPrimary = document.getElementById('assign-is-primary').checked;
 
   try {
-    await fetch(`${API_URL}/employees/assign`, {
+    await fetch(`${API_URL}/employees/assignments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -739,8 +754,10 @@ document.getElementById('form-assign-shift').addEventListener('submit', async (e
   const employeeId = document.getElementById('shift-assign-emp-id').value;
 
   try {
-    await fetch(`${API_URL}/shifts/${shiftId}/assign/${employeeId}`, {
-      method: 'POST'
+    await fetch(`${API_URL}/shifts/${shiftId}/employees`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employeeId: Number(employeeId) })
     }).then(handleApiResponse);
 
     showToast('Сотрудник назначен на смену (записано в аудит-лог)!', 'success');
@@ -753,14 +770,16 @@ document.getElementById('form-assign-shift').addEventListener('submit', async (e
 
 // Снятие сотрудника со смены
 async function removeEmployeeFromShift(shiftId, employeeId, empName) {
-  if (!confirm(`Снять сотрудника "${empName}" с этой смены?`)) return;
+  const emp = state.employees.find(e => e.id === Number(employeeId));
+  const name = empName || (emp ? emp.name : `ID #${employeeId}`);
+  if (!confirm(`Снять сотрудника "${name}" с этой смены?`)) return;
 
   try {
-    await fetch(`${API_URL}/shifts/${shiftId}/remove/${employeeId}`, {
+    await fetch(`${API_URL}/shifts/${shiftId}/employees/${employeeId}`, {
       method: 'DELETE'
     }).then(handleApiResponse);
 
-    showToast(`Сотрудник "${empName}" снят со смены`, 'info');
+    showToast(`Сотрудник "${name}" снят со смены`, 'info');
     loadShiftsForSchedule(state.selectedScheduleId);
   } catch (err) {
     showToast(err.message, 'danger');
@@ -893,11 +912,29 @@ async function deleteBranch(id) {
   }
 }
 
-async function deleteEmployee(id) {
-  if (!confirm(`Удалить сотрудника #${id}?`)) return;
+async function deleteEmployee(id, name) {
+  const emp = state.employees.find(e => e.id === Number(id));
+  const empName = name || (emp ? emp.name : '');
+  const label = empName ? ` (${empName})` : '';
+  if (!confirm(`Полностью удалить сотрудника #${id}${label} из базы данных?`)) return;
   try {
     await fetch(`${API_URL}/employees/${id}`, { method: 'DELETE' }).then(handleApiResponse);
-    showToast('Сотрудник удален', 'info');
+    showToast('Сотрудник успешно удален из базы данных', 'info');
+    loadEmployees();
+    loadDashboardStats();
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+async function dismissEmployee(id, name) {
+  const emp = state.employees.find(e => e.id === Number(id));
+  const empName = name || (emp ? emp.name : '');
+  const label = empName ? ` (${empName})` : '';
+  if (!confirm(`Уволить сотрудника #${id}${label}? Статус будет переведён в DISMISSED.`)) return;
+  try {
+    await fetch(`${API_URL}/employees/${id}/dismiss`, { method: 'POST' }).then(handleApiResponse);
+    showToast(`Сотрудник #${id} уволен (DISMISSED)`, 'warning');
     loadEmployees();
     loadDashboardStats();
   } catch (err) {
@@ -923,7 +960,8 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function formatDateTime(isoString) {

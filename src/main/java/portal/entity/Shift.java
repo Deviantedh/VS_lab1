@@ -55,7 +55,7 @@ public class Shift {
     @Builder.Default
     private List<Employee> employees = new ArrayList<>();
 
-    @OneToMany(mappedBy = "shift", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "shift", fetch = FetchType.LAZY)
     @Builder.Default
     private List<AttendanceRecord> attendanceRecords = new ArrayList<>();
 

@@ -78,9 +78,18 @@ public class EmployeeService {
     @Transactional
     public EmployeeDto.Response dismiss(Long id) {
         Employee employee = findEmployeeById(id);
+        if (employee.getStatus() == EmployeeStatus.DISMISSED) {
+            throw new BusinessConflictException("Сотрудник " + employee.getName() + " уже уволен");
+        }
         employee.setStatus(EmployeeStatus.DISMISSED);
         employee.setDismissalDate(LocalDate.now());
         return toResponse(employeeRepository.save(employee));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Employee employee = findEmployeeById(id);
+        employeeRepository.delete(employee);
     }
 
     @Transactional
