@@ -16,18 +16,6 @@ docker compose up -d postgres
 docker compose up --build
 ```
 
-### Запуск веб-интерфейсов (Фронтенд):
-```bash
-node frontend/server.js
-```
-* Панель Администратора: http://localhost:3000
-* Кабинет Сотрудника: http://localhost:3001
-
-### Остановка фронтенда:
-```bash
-pkill -f "node frontend/server.js"
-```
-
 ### Запуск тестов:
 ```bash
 ./mvnw test

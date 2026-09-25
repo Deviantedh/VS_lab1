@@ -145,19 +145,7 @@ docker compose up --build
 ```
 Бэкенд REST API будет доступен на `http://localhost:8080`.
 
-### 3. Запуск веб-интерфейсов (Фронтенд)
-```bash
-node frontend/server.js
-```
-* **Панель Администратора:** [http://localhost:3000](http://localhost:3000)
-* **Кабинет Сотрудника:** [http://localhost:3001](http://localhost:3001)
-
-Остановка фронтенда:
-```bash
-pkill -f "node frontend/server.js"
-```
-
-### 4. Остановка Docker-контейнеров
+### 3. Остановка Docker-контейнеров
 * **С удалением контейнеров, но сохранением данных БД:**
   ```bash
   docker compose down
