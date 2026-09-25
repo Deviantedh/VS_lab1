@@ -108,6 +108,9 @@ pkill -f "node frontend/server.js"
 }
 ```
 * **Ответ:** `201 Created`, сотрудник с `id: 1`.
+* **Дополнительные операции:**
+  * Увольнение сотрудника: `POST http://localhost:8080/api/employees/1/dismiss` (статус `DISMISSED`, фиксируется `dismissalDate`).
+  * Прием обратно на работу: `POST http://localhost:8080/api/employees/1/rehire` (статус `ACTIVE`, сброс `dismissalDate`).
 
 ---
 
@@ -137,7 +140,7 @@ pkill -f "node frontend/server.js"
   "employeeId": 1
 }
 ```
-* **Ответ:** `201 Created` (роли: 0 - ADMIN, 1 - HR, 2 - MANAGER, 3 - EMPLOYEE).
+* **Ответ:** `201 Created` (роли: 0 - ADMIN, 1 - HR, 2 - MANAGER, 3 - EMPLOYEE; справочник ролей: `GET /api/users/roles`).
 
 ---
 

@@ -64,6 +64,12 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.dismiss(id));
     }
 
+    @PostMapping("/{id}/rehire")
+    @Operation(summary = "Принять уволенного сотрудника обратно на работу (перевод в статус ACTIVE)")
+    public ResponseEntity<EmployeeDto.Response> rehire(@PathVariable Long id) {
+        return ResponseEntity.ok(employeeService.rehire(id));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Удалить сотрудника из системы")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

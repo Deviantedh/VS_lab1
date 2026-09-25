@@ -2,10 +2,12 @@ const API_URL = 'http://localhost:8080/api';
 
 // Состояние приложения
 const state = {
+  currentRole: 'ADMIN',
   companies: [],
   positions: [],
   branches: [],
   employees: [],
+  users: [],
   selectedCompanyId: null,
   selectedBranchId: null,
   selectedScheduleId: null,
@@ -69,6 +71,51 @@ async function checkBackendStatus() {
   }
 }
 
+// ================= Управление Ролями / Персонами =================
+function applyPersonaRole(role) {
+  state.currentRole = role;
+  localStorage.setItem('admin_persona_role', role);
+
+  const select = document.getElementById('admin-role-select');
+  if (select && select.value !== role) {
+    select.value = role;
+  }
+
+  // Права доступа по ролям:
+  // ADMIN: полный доступ ко всем разделам
+  // HR: организация (структура), сотрудники, пользователи и доступ, заявки
+  // MANAGER: сотрудники (просмотр), смены и графики, заявки, табель
+  const permissions = {
+    ADMIN: ['dashboard', 'organization', 'employees', 'users', 'shifts', 'requests', 'attendance'],
+    HR: ['dashboard', 'organization', 'employees', 'users', 'requests'],
+    MANAGER: ['dashboard', 'employees', 'shifts', 'requests', 'attendance']
+  };
+
+  const allowed = permissions[role] || permissions.ADMIN;
+  const navItems = document.querySelectorAll('.nav-item');
+
+  let activeVisible = false;
+  navItems.forEach(item => {
+    const sec = item.dataset.section;
+    if (allowed.includes(sec)) {
+      item.style.display = 'flex';
+      if (item.classList.contains('active')) activeVisible = true;
+    } else {
+      item.style.display = 'none';
+      if (item.classList.contains('active')) {
+        item.classList.remove('active');
+        const secEl = document.getElementById(`section-${sec}`);
+        if (secEl) secEl.classList.remove('active');
+      }
+    }
+  });
+
+  if (!activeVisible) {
+    const dashBtn = document.querySelector('.nav-item[data-section="dashboard"]');
+    if (dashBtn) dashBtn.click();
+  }
+}
+
 // ================= Навигация по табам =================
 function initNavigation() {
   const navItems = document.querySelectorAll('.nav-item');
@@ -78,7 +125,8 @@ function initNavigation() {
   const titles = {
     dashboard: { title: 'Сводка системы', subtitle: 'Общий обзор состояния компаний и сотрудников' },
     organization: { title: 'Структура организации', subtitle: 'Управление компаниями, филиалами и должностями' },
-    employees: { title: 'Кадровый состав', subtitle: 'Список сотрудников и их назначения в филиалы' },
+    employees: { title: 'Кадровый состав', subtitle: 'Список сотрудников, учетные записи и назначения' },
+    users: { title: 'Пользователи и Доступ', subtitle: 'Управление учетными записями и системными ролями (0..3)' },
     shifts: { title: 'Графики и Смены', subtitle: 'Планирование смен, назначение персонала и аудит-лог' },
     requests: { title: 'Заявки на согласование', subtitle: 'Отпуска, отгулы и больничные сотрудников' },
     attendance: { title: 'Табель рабочего времени', subtitle: 'Сравнение плановых и фактических явок (Slice)' }
@@ -91,7 +139,8 @@ function initNavigation() {
 
       const target = btn.dataset.section;
       document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-      document.getElementById(`section-${target}`).classList.add('active');
+      const targetSec = document.getElementById(`section-${target}`);
+      if (targetSec) targetSec.classList.add('active');
 
       if (titles[target]) {
         titleEl.textContent = titles[target].title;
@@ -101,6 +150,7 @@ function initNavigation() {
       // Подгрузка при переходе
       if (target === 'organization') loadOrganizationData();
       if (target === 'employees') loadEmployees();
+      if (target === 'users') loadUsers();
       if (target === 'shifts') loadShiftsSection();
       if (target === 'requests') loadRequests();
       if (target === 'attendance') loadAttendance(true);
@@ -278,17 +328,38 @@ async function loadBranchesForCompany(companyId) {
   }
 }
 
+// Вспомогательный класс для бейджей ролей
+function getRoleBadgeClass(roleCode) {
+  switch (roleCode) {
+    case 'ADMIN': return 'badge-red';
+    case 'HR': return 'badge-green';
+    case 'MANAGER': return 'badge-yellow';
+    case 'EMPLOYEE':
+    default: return 'badge-blue';
+  }
+}
+
 // ================= 3. СОТРУДНИКИ =================
 async function loadEmployees() {
   const tbody = document.getElementById('employees-table-body');
   try {
-    const res = await fetch(`${API_URL}/employees?size=50`).then(handleApiResponse);
-    const employees = Array.isArray(res) ? res : (res.content || []);
+    const [empRes, usersRes] = await Promise.all([
+      fetch(`${API_URL}/employees?size=50`).then(handleApiResponse),
+      fetch(`${API_URL}/users`).then(handleApiResponse).catch(() => [])
+    ]);
+
+    const employees = Array.isArray(empRes) ? empRes : (empRes.content || []);
     state.employees = employees;
+    state.users = Array.isArray(usersRes) ? usersRes : [];
+
+    const userByEmpId = {};
+    state.users.forEach(u => {
+      if (u.employeeId) userByEmpId[u.employeeId] = u;
+    });
 
     tbody.innerHTML = '';
     if (employees.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Сотрудников пока нет</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Сотрудников пока нет</td></tr>';
       return;
     }
 
@@ -303,6 +374,8 @@ async function loadEmployees() {
       }
     }));
 
+    const isManagerOnly = state.currentRole === 'MANAGER';
+
     employees.forEach(emp => {
       const tr = document.createElement('tr');
       const empAssignments = assignmentsMap[emp.id] || [];
@@ -315,9 +388,48 @@ async function loadEmployees() {
           `).join('')
         : '<span style="color: var(--text-muted); font-size: 12px;">Не назначен</span>';
 
+      const assignBtnHtml = (!isManagerOnly && emp.status !== 'DISMISSED') ? `
+        <button class="btn btn-secondary btn-sm" style="margin-top: 4px; padding: 2px 8px; font-size: 11px; display: block;"
+                onclick="openAssignEmployeeModal(${emp.id})">+ Назначить ставку</button>
+      ` : '';
+
       let statusBadge = 'badge-green';
       if (emp.status === 'ON_LEAVE') statusBadge = 'badge-yellow';
       if (emp.status === 'DISMISSED') statusBadge = 'badge-red';
+
+      const user = userByEmpId[emp.id];
+      const roleHtml = user ? `
+        <div style="font-size: 12px;">
+          <span class="badge ${getRoleBadgeClass(user.roleCode)}" style="font-weight: 600;">${user.roleCode} (Роль ${user.roleId})</span>
+          <div style="color: var(--text-muted); margin-top: 3px;">Логин: <code>${escapeHtml(user.login)}</code></div>
+          ${!isManagerOnly ? `
+            <button class="btn btn-secondary btn-sm" style="margin-top: 4px; padding: 2px 8px; font-size: 11px;"
+                    onclick="openEditUserRoleModal(${user.id})">Изменить роль</button>
+          ` : ''}
+        </div>
+      ` : `
+        <div>
+          <span style="color: var(--text-muted); font-size: 12px;">Нет аккаунта</span>
+          ${!isManagerOnly ? `
+            <button class="btn btn-secondary btn-sm" style="margin-top: 4px; padding: 2px 8px; font-size: 11px; display: block;"
+                    onclick="openCreateUserForEmployeeModal(${emp.id})">+ Назначить роль</button>
+          ` : ''}
+        </div>
+      `;
+
+      let actionsHtml = '';
+      if (!isManagerOnly) {
+        actionsHtml = `
+          <div style="display: flex; gap: 6px;">
+            ${emp.status !== 'DISMISSED'
+              ? `<button class="btn btn-secondary btn-sm" onclick="dismissEmployee(${emp.id}, '${escapeHtml(emp.name)}')">Уволить</button>`
+              : `<button class="btn btn-primary btn-sm" onclick="rehireEmployee(${emp.id}, '${escapeHtml(emp.name)}')">Принять на работу</button>`}
+            <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${emp.id}, '${escapeHtml(emp.name)}')">Удалить</button>
+          </div>
+        `;
+      } else {
+        actionsHtml = '<span style="font-size: 12px; color: var(--text-muted);">Только просмотр</span>';
+      }
 
       tr.innerHTML = `
         <td><strong>#${emp.id}</strong></td>
@@ -325,16 +437,141 @@ async function loadEmployees() {
         <td>${escapeHtml(emp.phone)}</td>
         <td>${emp.hireDate || '—'}</td>
         <td><span class="badge ${statusBadge}">${emp.status}</span></td>
-        <td>${assignmentsHtml}</td>
+        <td>${roleHtml}</td>
+        <td>${assignmentsHtml}${assignBtnHtml}</td>
+        <td>${actionsHtml}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+// ================= ПОЛЬЗОВАТЕЛИ И СИСТЕМНЫЕ РОЛИ =================
+async function loadUsers() {
+  const tbody = document.getElementById('users-table-body');
+  try {
+    const users = await fetch(`${API_URL}/users`).then(handleApiResponse);
+    state.users = Array.isArray(users) ? users : [];
+    tbody.innerHTML = '';
+
+    if (state.users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Пользователей пока нет</td></tr>';
+      return;
+    }
+
+    state.users.forEach(u => {
+      const tr = document.createElement('tr');
+      const empLabel = u.employeeName
+        ? `<strong>${escapeHtml(u.employeeName)}</strong> (ID #${u.employeeId})`
+        : '<span style="color: var(--text-muted);">Без привязки (Системный аккаунт)</span>';
+
+      tr.innerHTML = `
+        <td><strong>#${u.id}</strong></td>
+        <td><code>${escapeHtml(u.login)}</code></td>
+        <td>${empLabel}</td>
+        <td>
+          <span class="badge ${getRoleBadgeClass(u.roleCode)}" style="font-weight: 600;">
+            ${u.roleName || u.roleCode} (Роль ${u.roleId})
+          </span>
+        </td>
+        <td>
+          <span class="badge ${u.isActive ? 'badge-green' : 'badge-red'}">
+            ${u.isActive ? 'Активен' : 'Заблокирован'}
+          </span>
+        </td>
+        <td>${formatDateTime(u.createdAt)}</td>
         <td>
           <div style="display: flex; gap: 6px;">
-            ${emp.status !== 'DISMISSED' ? `<button class="btn btn-secondary btn-sm" onclick="dismissEmployee(${emp.id})">Уволить</button>` : ''}
-            <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${emp.id})">Удалить</button>
+            <button class="btn btn-secondary btn-sm" onclick="openEditUserRoleModal(${u.id})">Изменить роль</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id}, '${escapeHtml(u.login)}')">Удалить</button>
           </div>
         </td>
       `;
       tbody.appendChild(tr);
     });
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+function openAddUserModal() {
+  const modal = document.getElementById('modal-user');
+  document.getElementById('modal-user-title').textContent = 'Создать нового пользователя';
+  document.getElementById('user-id').value = '';
+  document.getElementById('user-login').value = '';
+  document.getElementById('user-login').disabled = false;
+  document.getElementById('user-role-select').value = '3';
+
+  const empSelect = document.getElementById('user-employee-id');
+  empSelect.innerHTML = '<option value="">Без привязки (Системный аккаунт)</option>';
+  (state.employees || []).forEach(e => {
+    empSelect.innerHTML += `<option value="${e.id}">${escapeHtml(e.name)} (ID #${e.id})</option>`;
+  });
+  empSelect.value = '';
+  empSelect.disabled = false;
+
+  modal.showModal();
+}
+
+function openCreateUserForEmployeeModal(employeeId) {
+  const modal = document.getElementById('modal-user');
+  const emp = (state.employees || []).find(e => e.id === Number(employeeId));
+  const empName = emp ? emp.name : '#' + employeeId;
+  document.getElementById('modal-user-title').textContent = `Выдать доступ сотруднику: ${empName}`;
+  document.getElementById('user-id').value = '';
+  
+  let suggestedLogin = '';
+  if (emp) {
+    suggestedLogin = emp.name.toLowerCase().replace(/[^a-zа-я0-9]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  }
+  document.getElementById('user-login').value = suggestedLogin || 'user_' + employeeId;
+  document.getElementById('user-login').disabled = false;
+  document.getElementById('user-role-select').value = '3';
+
+  const empSelect = document.getElementById('user-employee-id');
+  empSelect.innerHTML = '';
+  (state.employees || []).forEach(e => {
+    empSelect.innerHTML += `<option value="${e.id}">${escapeHtml(e.name)} (ID #${e.id})</option>`;
+  });
+  empSelect.value = String(employeeId);
+  empSelect.disabled = false;
+
+  modal.showModal();
+}
+
+function openEditUserRoleModal(userId) {
+  const user = (state.users || []).find(u => u.id === Number(userId));
+  if (!user) return;
+
+  const modal = document.getElementById('modal-user');
+  document.getElementById('modal-user-title').textContent = `Изменить роль пользователя: ${user.login}`;
+  document.getElementById('user-id').value = user.id;
+  document.getElementById('user-login').value = user.login;
+  document.getElementById('user-login').disabled = false;
+  document.getElementById('user-role-select').value = String(user.roleId);
+
+  const empSelect = document.getElementById('user-employee-id');
+  empSelect.innerHTML = '<option value="">Без привязки (Системный аккаунт)</option>';
+  (state.employees || []).forEach(e => {
+    empSelect.innerHTML += `<option value="${e.id}">${escapeHtml(e.name)} (ID #${e.id})</option>`;
+  });
+  empSelect.value = user.employeeId ? String(user.employeeId) : '';
+  empSelect.disabled = false;
+
+  modal.showModal();
+}
+
+async function deleteUser(id, login) {
+  const label = login ? ` (${login})` : '';
+  if (!confirm(`Удалить учетную запись пользователя #${id}${label}?`)) return;
+
+  try {
+    await fetch(`${API_URL}/users/${id}`, { method: 'DELETE' }).then(handleApiResponse);
+    showToast('Учетная запись пользователя удалена', 'info');
+    loadUsers();
+    loadEmployees();
   } catch (err) {
     showToast(err.message, 'danger');
   }
@@ -648,15 +885,40 @@ document.getElementById('form-employee').addEventListener('submit', async (e) =>
   const hireDate = document.getElementById('emp-hire').value || new Date().toISOString().substring(0, 10);
 
   try {
-    await fetch(`${API_URL}/employees`, {
+    const newEmp = await fetch(`${API_URL}/employees`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, phone, birthDate, hireDate, status: 'ACTIVE' })
     }).then(handleApiResponse);
 
     showToast(`Сотрудник "${name}" успешно зарегистрирован!`, 'success');
+
+    // Проверяем создание учетной записи
+    const createUserCheck = document.getElementById('emp-create-user-check').checked;
+    if (createUserCheck && newEmp && newEmp.id) {
+      const login = document.getElementById('emp-user-login').value.trim();
+      const roleId = Number(document.getElementById('emp-user-role').value);
+      if (login) {
+        try {
+          await fetch(`${API_URL}/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              employeeId: newEmp.id,
+              roleId,
+              login
+            })
+          }).then(handleApiResponse);
+          showToast(`Учетная запись (${login}) с ролью ${roleId} успешно создана!`, 'success');
+        } catch (userErr) {
+          showToast(`Сотрудник создан, но не удалось создать пользователя: ${userErr.message}`, 'warning');
+        }
+      }
+    }
+
     document.getElementById('modal-employee').close();
     document.getElementById('form-employee').reset();
+    document.getElementById('emp-user-fields').style.display = 'none';
     document.getElementById('emp-hire').value = new Date().toISOString().substring(0, 10);
     loadEmployees();
     loadDashboardStats();
@@ -942,6 +1204,89 @@ async function dismissEmployee(id, name) {
   }
 }
 
+async function rehireEmployee(id, name) {
+  const emp = state.employees.find(e => e.id === Number(id));
+  const empName = name || (emp ? emp.name : '');
+  const label = empName ? ` (${empName})` : '';
+  if (!confirm(`Принять сотрудника #${id}${label} обратно на работу? Статус будет изменен на ACTIVE.`)) return;
+  try {
+    await fetch(`${API_URL}/employees/${id}/rehire`, { method: 'POST' }).then(handleApiResponse);
+    showToast(`Сотрудник #${id}${label} принят обратно на работу`, 'success');
+    loadEmployees();
+    loadDashboardStats();
+  } catch (err) {
+    showToast(err.message, 'danger');
+  }
+}
+
+async function openAssignEmployeeModal(preselectedEmpId = null) {
+  const empSelect = document.getElementById('assign-emp-id');
+  const branchSelect = document.getElementById('assign-branch-id');
+  const posSelect = document.getElementById('assign-pos-id');
+
+  // Load employees if empty
+  if (!state.employees || state.employees.length === 0) {
+    const empRes = await fetch(`${API_URL}/employees?size=50`).then(handleApiResponse).catch(() => []);
+    state.employees = Array.isArray(empRes) ? empRes : (empRes.content || []);
+  }
+
+  // Load companies & branches and positions if empty
+  if (!state.allBranches || state.allBranches.length === 0 || !state.positions || state.positions.length === 0) {
+    try {
+      const [companies, positions] = await Promise.all([
+        fetch(`${API_URL}/companies`).then(handleApiResponse).catch(() => []),
+        fetch(`${API_URL}/positions`).then(handleApiResponse).catch(() => [])
+      ]);
+      state.positions = Array.isArray(positions) ? positions : (positions.content || []);
+      state.companies = Array.isArray(companies) ? companies : (companies.content || []);
+
+      const branches = [];
+      for (const c of state.companies) {
+        try {
+          const bList = await fetch(`${API_URL}/branches/company/${c.id}`).then(handleApiResponse);
+          if (Array.isArray(bList)) branches.push(...bList);
+        } catch (e) {}
+      }
+      state.allBranches = branches;
+    } catch (err) {
+      console.error('Ошибка загрузки филиалов и должностей:', err);
+    }
+  }
+
+  // Populate empSelect
+  empSelect.innerHTML = '<option value="">Выберите сотрудника...</option>';
+  state.employees.forEach(e => {
+    const isSelected = preselectedEmpId && e.id === Number(preselectedEmpId);
+    empSelect.innerHTML += `<option value="${e.id}" ${isSelected ? 'selected' : ''}>${escapeHtml(e.name)} (ID #${e.id})</option>`;
+  });
+  if (preselectedEmpId) {
+    empSelect.value = String(preselectedEmpId);
+  }
+
+  // Populate branchSelect
+  branchSelect.innerHTML = '<option value="">Выберите филиал...</option>';
+  if (!state.allBranches || state.allBranches.length === 0) {
+    branchSelect.innerHTML += '<option value="" disabled>Филиалы не найдены (создайте филиал в Структуре)</option>';
+  } else {
+    state.allBranches.forEach(b => {
+      branchSelect.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
+    });
+  }
+
+  // Populate posSelect
+  posSelect.innerHTML = '<option value="">Выберите должность...</option>';
+  if (!state.positions || state.positions.length === 0) {
+    posSelect.innerHTML += '<option value="" disabled>Должности не найдены (создайте должность в Структуре)</option>';
+  } else {
+    state.positions.forEach(p => {
+      posSelect.innerHTML += `<option value="${p.id}">${escapeHtml(p.title)}</option>`;
+    });
+  }
+
+  document.getElementById('assign-started-at').value = new Date().toISOString().substring(0, 10);
+  document.getElementById('modal-assign-employee').showModal();
+}
+
 async function deleteShift(id) {
   if (!confirm(`Удалить смену #${id}?`)) return;
   try {
@@ -1011,27 +1356,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('btn-assign-employee-branch').addEventListener('click', () => {
-    const empSelect = document.getElementById('assign-emp-id');
-    const branchSelect = document.getElementById('assign-branch-id');
-    const posSelect = document.getElementById('assign-pos-id');
-
-    empSelect.innerHTML = '<option value="">Выберите сотрудника...</option>';
-    state.employees.forEach(e => {
-      empSelect.innerHTML += `<option value="${e.id}">${escapeHtml(e.name)}</option>`;
-    });
-
-    branchSelect.innerHTML = '<option value="">Выберите филиал...</option>';
-    (state.allBranches || []).forEach(b => {
-      branchSelect.innerHTML += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
-    });
-
-    posSelect.innerHTML = '<option value="">Выберите должность...</option>';
-    (state.positions || []).forEach(p => {
-      posSelect.innerHTML += `<option value="${p.id}">${escapeHtml(p.title)}</option>`;
-    });
-
-    document.getElementById('assign-started-at').value = new Date().toISOString().substring(0, 10);
-    document.getElementById('modal-assign-employee').showModal();
+    openAssignEmployeeModal();
   });
 
   document.getElementById('btn-create-schedule').addEventListener('click', () => {
@@ -1082,6 +1407,73 @@ window.addEventListener('DOMContentLoaded', async () => {
     state.attendancePage++;
     loadAttendance(false);
   });
+
+  // Переключение создания пользователя в форме сотрудника
+  document.getElementById('emp-create-user-check').addEventListener('change', (e) => {
+    const fields = document.getElementById('emp-user-fields');
+    fields.style.display = e.target.checked ? 'flex' : 'none';
+    if (e.target.checked) {
+      const name = document.getElementById('emp-name').value.trim();
+      if (name && !document.getElementById('emp-user-login').value) {
+        document.getElementById('emp-user-login').value = name.toLowerCase().replace(/[^a-zа-я0-9]/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+      }
+    }
+  });
+
+  // Кнопка создания пользователя
+  document.getElementById('btn-add-user').addEventListener('click', () => {
+    openAddUserModal();
+  });
+
+  // Отправка формы пользователя (создание или обновление роли)
+  document.getElementById('form-user').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userId = document.getElementById('user-id').value;
+    const login = document.getElementById('user-login').value.trim();
+    const roleId = Number(document.getElementById('user-role-select').value);
+    const empVal = document.getElementById('user-employee-id').value;
+    const employeeId = empVal ? Number(empVal) : null;
+
+    try {
+      if (userId) {
+        await fetch(`${API_URL}/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login, roleId, employeeId })
+        }).then(handleApiResponse);
+        showToast(`Пользователь "${login}" и роль обновлены`, 'success');
+      } else {
+        await fetch(`${API_URL}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login, roleId, employeeId })
+        }).then(handleApiResponse);
+        showToast(`Пользователь "${login}" успешно создан`, 'success');
+      }
+
+      document.getElementById('modal-user').close();
+      loadUsers();
+      loadEmployees();
+    } catch (err) {
+      showToast(err.message, 'danger');
+    }
+  });
+
+  // Переключатель роли персоны
+  const roleSelect = document.getElementById('admin-role-select');
+  roleSelect.addEventListener('change', (e) => {
+    applyPersonaRole(e.target.value);
+    showToast(`Режим интерфейса: ${e.target.value}`, 'info');
+  });
+
+  // Инициализация роли из URL параметров (?role=HR) или сохраненной
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramRole = urlParams.get('role');
+  const savedRole = localStorage.getItem('admin_persona_role') || 'ADMIN';
+  const initialRole = (paramRole && ['ADMIN', 'HR', 'MANAGER'].includes(paramRole.toUpperCase()))
+    ? paramRole.toUpperCase()
+    : savedRole;
+  applyPersonaRole(initialRole);
 
   // Запуск
   await checkBackendStatus();

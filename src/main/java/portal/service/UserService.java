@@ -13,6 +13,7 @@ import portal.repository.RoleRepository;
 import portal.repository.UserRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +42,24 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь с логином '" + login + "' не найден")));
     }
 
+    @Transactional(readOnly = true)
+    public UserDto.Response getByEmployeeId(Long employeeId) {
+        return toResponse(userRepository.findByEmployeeId(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("У сотрудника с ID " + employeeId + " нет учетной записи")));
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserDto.RoleResponse> getRoles() {
+        return roleRepository.findAll().stream()
+                .map(r -> UserDto.RoleResponse.builder()
+                        .id(r.getId())
+                        .code(r.getCode())
+                        .name(r.getName())
+                        .description(r.getDescription())
+                        .build())
+                .toList();
+    }
+
     @Transactional
     public UserDto.Response create(UserDto.Request request) {
         String login = request.getLogin().trim();
@@ -54,6 +73,9 @@ public class UserService {
         Employee employee = null;
         if (request.getEmployeeId() != null) {
             employee = employeeService.findEmployeeById(request.getEmployeeId());
+            if (userRepository.findByEmployeeId(employee.getId()).isPresent()) {
+                throw new BusinessConflictException("Сотрудник '" + employee.getName() + "' уже имеет учетную запись");
+            }
         }
 
         User user = User.builder()
@@ -62,6 +84,35 @@ public class UserService {
                 .employee(employee)
                 .isActive(true)
                 .build();
+
+        return toResponse(userRepository.save(user));
+    }
+
+    @Transactional
+    public UserDto.Response update(Long id, UserDto.Request request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с ID " + id + " не найден"));
+
+        String login = request.getLogin().trim();
+        if (!user.getLogin().equalsIgnoreCase(login) && userRepository.existsByLogin(login)) {
+            throw new BusinessConflictException("Логин '" + login + "' уже занят другим сотрудником");
+        }
+
+        Role role = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new ResourceNotFoundException("Роль с ID " + request.getRoleId() + " не существует (допустимо: 0 - ADMIN, 1 - HR, 2 - MANAGER, 3 - EMPLOYEE)"));
+
+        Employee employee = null;
+        if (request.getEmployeeId() != null) {
+            employee = employeeService.findEmployeeById(request.getEmployeeId());
+            Optional<User> existing = userRepository.findByEmployeeId(employee.getId());
+            if (existing.isPresent() && !existing.get().getId().equals(user.getId())) {
+                throw new BusinessConflictException("Сотрудник '" + employee.getName() + "' уже привязан к пользователю '" + existing.get().getLogin() + "'");
+            }
+        }
+
+        user.setLogin(login);
+        user.setRole(role);
+        user.setEmployee(employee);
 
         return toResponse(userRepository.save(user));
     }

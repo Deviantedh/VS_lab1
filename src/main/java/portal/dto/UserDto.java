@@ -57,4 +57,21 @@ public class UserDto {
         private Instant lastLoginAt;
         private Instant createdAt;
     }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(name = "RoleResponse")
+    public static class RoleResponse {
+        @Schema(description = "ID роли: 0 - ADMIN, 1 - HR, 2 - MANAGER, 3 - EMPLOYEE", example = "0")
+        private Short id;
+        @Schema(description = "Код роли", example = "ADMIN")
+        private RoleCode code;
+        @Schema(description = "Название роли", example = "Администратор")
+        private String name;
+        @Schema(description = "Описание роли", example = "Полный доступ к управлению системой")
+        private String description;
+    }
 }

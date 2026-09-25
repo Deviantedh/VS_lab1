@@ -149,6 +149,20 @@ class ServiceBusinessLogicTest {
     }
 
     @Test
+    @DisplayName("EmployeeService rehire updates status to ACTIVE and clears dismissal date")
+    void employeeServiceRehire_shouldMarkActiveAndClearDismissalDate() {
+        Employee employee = Employee.builder().id(2L).name("Анна").status(EmployeeStatus.DISMISSED).dismissalDate(LocalDate.now()).build();
+        when(employeeRepository.findById(2L)).thenReturn(Optional.of(employee));
+        when(employeeRepository.save(any(Employee.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        EmployeeDto.Response response = employeeService.rehire(2L);
+
+        assertEquals(EmployeeStatus.ACTIVE, response.getStatus());
+        assertNull(employee.getDismissalDate());
+        verify(employeeRepository).save(employee);
+    }
+
+    @Test
     @DisplayName("EmployeeService assigns employee to branch and returns assignment response")
     void employeeServiceAssignToBranch_shouldPersistAssignment() {
         Employee employee = Employee.builder().id(5L).name("Тест").build();

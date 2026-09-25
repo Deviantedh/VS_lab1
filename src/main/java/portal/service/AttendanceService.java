@@ -9,21 +9,43 @@ import portal.dto.AttendanceRecordDto;
 import portal.dto.SliceResponse;
 import portal.entity.AttendanceRecord;
 import portal.entity.Employee;
+import portal.entity.EmployeeStatus;
 import portal.entity.Shift;
 import portal.exception.BusinessConflictException;
 import portal.exception.ResourceNotFoundException;
 import portal.repository.AttendanceRecordRepository;
+import portal.repository.EmployeeAbsenceRepository;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
-@RequiredArgsConstructor
 public class AttendanceService {
 
     private final AttendanceRecordRepository attendanceRepository;
     private final EmployeeService employeeService;
     private final ShiftService shiftService;
+    private final EmployeeAbsenceRepository absenceRepository;
+
+    public AttendanceService(AttendanceRecordRepository attendanceRepository,
+                             EmployeeService employeeService,
+                             ShiftService shiftService) {
+        this(attendanceRepository, employeeService, shiftService, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AttendanceService(AttendanceRecordRepository attendanceRepository,
+                             EmployeeService employeeService,
+                             ShiftService shiftService,
+                             EmployeeAbsenceRepository absenceRepository) {
+        this.attendanceRepository = attendanceRepository;
+        this.employeeService = employeeService;
+        this.shiftService = shiftService;
+        this.absenceRepository = absenceRepository;
+    }
 
     /**
      * Прокрутка страниц данных (Slice без подсчета общего количества).
@@ -86,6 +108,15 @@ public class AttendanceService {
     public AttendanceRecordDto.Response checkIn(AttendanceRecordDto.CheckInRequest request) {
         Employee employee = employeeService.findEmployeeById(request.getEmployeeId());
 
+        if (employee.getStatus() == EmployeeStatus.DISMISSED) {
+            throw new BusinessConflictException("Уволенный сотрудник не может выходить на смену");
+        }
+
+        LocalDate today = LocalDate.now();
+        if (absenceRepository != null && !absenceRepository.findOverlappingAbsences(employee.getId(), today, today).isEmpty()) {
+            throw new BusinessConflictException("Сотрудник находится в подтверждённом отпуске или на больничном. Выход на смену заблокирован");
+        }
+
         if (attendanceRepository.existsByEmployeeIdAndActualStartIsNotNullAndActualEndIsNull(employee.getId())) {
             throw new BusinessConflictException("У сотрудника " + employee.getName() + " уже есть активная открытая смена. Сначала завершите её (Check-Out).");
         }
@@ -97,6 +128,20 @@ public class AttendanceService {
 
         if (request.getShiftId() != null) {
             shift = shiftService.findShiftById(request.getShiftId());
+            boolean isAssigned = shift.getEmployees() != null &&
+                    shift.getEmployees().stream().anyMatch(e -> e.getId().equals(employee.getId()));
+            if (!isAssigned) {
+                throw new BusinessConflictException("Сотрудник " + employee.getName() + " не назначен на смену #" + shift.getId());
+            }
+
+            LocalDateTime localStart = LocalDateTime.of(shift.getDate(), shift.getTimeFrom());
+            plannedStart = localStart.atZone(ZoneId.systemDefault()).toInstant();
+
+            LocalDateTime localEnd = LocalDateTime.of(shift.getDate(), shift.getTimeTo());
+            if (shift.getTimeTo().isBefore(shift.getTimeFrom())) {
+                localEnd = localEnd.plusDays(1);
+            }
+            plannedEnd = localEnd.atZone(ZoneId.systemDefault()).toInstant();
         }
 
         AttendanceRecord record = AttendanceRecord.builder()

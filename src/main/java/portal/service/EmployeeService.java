@@ -70,6 +70,9 @@ public class EmployeeService {
         }
         if (request.getStatus() != null) {
             employee.setStatus(request.getStatus());
+            if (request.getStatus() == EmployeeStatus.ACTIVE) {
+                employee.setDismissalDate(null);
+            }
         }
 
         return toResponse(employeeRepository.save(employee));
@@ -83,6 +86,17 @@ public class EmployeeService {
         }
         employee.setStatus(EmployeeStatus.DISMISSED);
         employee.setDismissalDate(LocalDate.now());
+        return toResponse(employeeRepository.save(employee));
+    }
+
+    @Transactional
+    public EmployeeDto.Response rehire(Long id) {
+        Employee employee = findEmployeeById(id);
+        if (employee.getStatus() != EmployeeStatus.DISMISSED) {
+            throw new BusinessConflictException("Сотрудник " + employee.getName() + " не является уволенным");
+        }
+        employee.setStatus(EmployeeStatus.ACTIVE);
+        employee.setDismissalDate(null);
         return toResponse(employeeRepository.save(employee));
     }
 

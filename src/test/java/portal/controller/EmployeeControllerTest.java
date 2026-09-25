@@ -52,6 +52,12 @@ class EmployeeControllerTest {
     }
 
     @Test
+    void rehire_shouldReturn200() throws Exception {
+        when(employeeService.rehire(4L)).thenReturn(EmployeeDto.Response.builder().id(4L).status(EmployeeStatus.ACTIVE).build());
+        mockMvc.perform(post("/api/employees/4/rehire")).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
     void delete_shouldReturn204() throws Exception {
         doNothing().when(employeeService).delete(4L);
         mockMvc.perform(delete("/api/employees/4")).andExpect(status().isNoContent());

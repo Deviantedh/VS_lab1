@@ -38,10 +38,28 @@ public class UserController {
         return ResponseEntity.ok(userService.getByLogin(login));
     }
 
+    @GetMapping("/roles")
+    @Operation(summary = "Получить справочник системных ролей (0: ADMIN, 1: HR, 2: MANAGER, 3: EMPLOYEE)")
+    public ResponseEntity<List<UserDto.RoleResponse>> getRoles() {
+        return ResponseEntity.ok(userService.getRoles());
+    }
+
+    @GetMapping("/by-employee/{employeeId}")
+    @Operation(summary = "Получить пользователя по ID сотрудника")
+    public ResponseEntity<UserDto.Response> getByEmployeeId(@PathVariable Long employeeId) {
+        return ResponseEntity.ok(userService.getByEmployeeId(employeeId));
+    }
+
     @PostMapping
     @Operation(summary = "Создать пользователя с указанием роли (0..3)")
     public ResponseEntity<UserDto.Response> create(@Valid @RequestBody UserDto.Request request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.create(request));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Обновить пользователя (роль 0..3, логин, привязку к сотруднику)")
+    public ResponseEntity<UserDto.Response> update(@PathVariable Long id, @Valid @RequestBody UserDto.Request request) {
+        return ResponseEntity.ok(userService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
