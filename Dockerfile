@@ -1,6 +1,5 @@
-# ==========================================
-# 1. Этап сборки (Build Stage)
-# ==========================================
+# 1. сборка
+
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /build
@@ -11,18 +10,16 @@ COPY .mvn .mvn
 
 RUN chmod +x ./mvnw
 
-# Копируем исходный код и собираем JAR с сохранением кэша зависимостей Maven
 COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 ./mvnw clean package -DskipTests
 
-# ==========================================
-# 2. Этап запуска (Runtime Stage)
-# ==========================================
+
+# 2. запуск
+
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Создаем непривилегированного пользователя для безопасности
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 

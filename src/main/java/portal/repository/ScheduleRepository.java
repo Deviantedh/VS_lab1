@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     List<Schedule> findAllByBranchId(Long branchId);
-    List<Schedule> findAllByBranchIdAndDateFromLessThanEqualAndDateToGreaterThanEqual(
+/*    List<Schedule> findAllByBranchIdAndDateFromLessThanEqualAndDateToGreaterThanEqual(
             Long branchId, LocalDate dateTo, LocalDate dateFrom
-    );
+    );*/
 }
